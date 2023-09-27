@@ -1,0 +1,13 @@
+[workspace]
+members = ["src/gateway","src/integration-tests"]
+resolver = "2"
+
+[workspace.dependencies]
+# Local
+gateway = { path = "src/gateway" }
+
+# External
+actix-web = "4"
+anyhow = "1"
+reqwest = "0.11"
+tokio = "1"
