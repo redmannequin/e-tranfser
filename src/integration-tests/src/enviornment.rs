@@ -20,6 +20,7 @@ impl MockEnv {
             .expect("http_port")
             .port();
         let config = AppConfig { http_port };
+
         let server_join_handle = std::thread::spawn(move || {
             actix_web::rt::System::new()
                 .block_on(async { gateway::start(config).await })

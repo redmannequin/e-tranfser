@@ -10,4 +10,9 @@ edition = "2021"
 # External
 actix-web = { workspace = true }
 anyhow = { workspace = true }
+reqwest = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+serde_path_to_error = { workspace = true }
+thiserror = { workspace = true }
 tokio = { workspace = true }
