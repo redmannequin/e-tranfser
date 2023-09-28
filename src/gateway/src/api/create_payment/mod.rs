@@ -1,5 +1,6 @@
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
+use tracing::instrument;
 
 use crate::AppContext;
 
@@ -24,6 +25,7 @@ pub async fn create_payment(
     execute(request).await
 }
 
+#[instrument]
 async fn execute(_request: Request) -> Result<impl Responder, PublicError> {
     // TODD: create payment
     Ok(HttpResponse::Ok())

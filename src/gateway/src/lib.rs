@@ -1,8 +1,12 @@
 mod api;
 
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
+use actix_web_opentelemetry::RequestTracing;
 use anyhow::Context;
+use serde::Deserialize;
+use tracing_actix_web::TracingLogger;
 
+#[derive(Deserialize, Debug)]
 pub struct AppConfig {
     pub http_port: u16,
 }
@@ -16,6 +20,8 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
         App::new()
             .app_data(app_context.clone())
             .wrap(Logger::default())
+            .wrap(RequestTracing::new())
+            .wrap(TracingLogger::default())
             .service(web::resource("/health_check").route(web::get().to(HttpResponse::Ok)))
             .service(api::create_payment::create_payment)
     })
