@@ -1,8 +1,9 @@
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use serde::Deserialize;
 use tracing::instrument;
+use uuid::Uuid;
 
-use crate::AppContext;
+use crate::{db::CreatePayment, AppContext};
 
 use super::{deserialize_body, PublicError};
 
@@ -10,7 +11,7 @@ use super::{deserialize_body, PublicError};
 struct Request {
     full_name: String,
     email: String,
-    amount: String,
+    amount: u64,
     security_question: String,
     security_answer: String,
 }
@@ -22,11 +23,25 @@ pub async fn create_payment(
     body: String,
 ) -> Result<impl Responder, PublicError> {
     let request = deserialize_body(&body)?;
-    execute(request).await
+    execute(app, request).await
 }
 
-#[instrument]
-async fn execute(_request: Request) -> Result<impl Responder, PublicError> {
-    // TODD: create payment
+#[instrument(skip(app))]
+async fn execute(
+    app: web::Data<AppContext>,
+    request: Request,
+) -> Result<impl Responder, PublicError> {
+    app.db_client
+        .insert_payment(CreatePayment {
+            payment_id: Uuid::new_v4(),
+            full_name: request.full_name,
+            email: request.email,
+            amount: request.amount,
+            security_question: request.security_question,
+            security_answer: request.security_answer,
+        })
+        .await
+        .unwrap();
+
     Ok(HttpResponse::Ok())
 }

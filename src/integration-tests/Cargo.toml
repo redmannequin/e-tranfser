@@ -13,4 +13,7 @@ gateway = { workspace = true }
 actix-web = { workspace = true }
 anyhow = { workspace = true }
 reqwest = { workspace = true }
+sqlx = { workspace = true, default-features = false, features = ["postgres", "runtime-tokio-native-tls", "macros", "migrate"] }
 tokio = { workspace = true, features = ["full"] }
+tokio-postgres = { workspace = true, features = ["with-uuid-1"] }
+uuid = { workspace = true, features = ["v4", "serde"] }
