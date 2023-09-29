@@ -46,15 +46,17 @@ impl DbClient {
                     payment_id,
                     full_name,
                     email,
+                    amount,
                     security_question,
                     security_answer
                 )
-                SELECT $1, $2, $3, $4, $5
+                SELECT $1, $2, $3, $4, $5, $6
                 "#,
                 &[
                     &payment.payment_id,
                     &payment.full_name,
                     &payment.email,
+                    &(payment.amount as i32),
                     &payment.security_question,
                     &payment.security_answer,
                 ],

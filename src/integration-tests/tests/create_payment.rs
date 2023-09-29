@@ -14,7 +14,7 @@ async fn create_payment() {
                 {
                     "full_name": "John Doe",
                     "email": "john.doe@email.com",
-                    "amount": "1000",
+                    "amount": 1000,
                     "security_question": "Whats your dogs name",
                     "security_answer": "superman"
                 }
@@ -24,5 +24,6 @@ async fn create_payment() {
         .await
         .expect("reqwest::post");
 
+    dbg!("{}", &response);
     assert!(response.status().is_success())
 }

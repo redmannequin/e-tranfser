@@ -11,7 +11,7 @@ use super::{deserialize_body, PublicError};
 struct Request {
     full_name: String,
     email: String,
-    amount: u64,
+    amount: u32,
     security_question: String,
     security_answer: String,
 }
