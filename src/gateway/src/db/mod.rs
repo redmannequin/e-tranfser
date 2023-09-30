@@ -2,6 +2,7 @@ mod entities;
 
 use serde::Deserialize;
 use tokio_postgres::{Config, NoTls};
+use uuid::Uuid;
 
 pub use self::entities::CreatePayment;
 
@@ -63,6 +64,28 @@ impl DbClient {
             )
             .await?;
         Ok(())
+    }
+
+    pub async fn get_payment(&self, payment_id: Uuid) -> Result<CreatePayment, DbError> {
+        Ok(self
+            .inner
+            .query_one(
+                r#"
+                    SELECT payment_id, full_name, email, amount, security_question, security_answer
+                    From payments
+                    WHERE payment_id = $1
+                "#,
+                &[&payment_id],
+            )
+            .await
+            .map(|row| CreatePayment {
+                payment_id: row.get(0),
+                full_name: row.get(1),
+                email: row.get(2),
+                amount: row.get::<_, i32>(3) as _,
+                security_question: row.get(4),
+                security_answer: row.get(5),
+            })?)
     }
 }
 

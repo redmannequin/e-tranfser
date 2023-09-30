@@ -1,17 +1,14 @@
-use std::{
-    net::{SocketAddr, TcpListener},
-    str::FromStr,
-    thread::JoinHandle,
-    time::Duration,
-};
+use std::{net::TcpListener, str::FromStr, thread::JoinHandle, time::Duration};
 
-use gateway::{AppConfig, DbConfig};
+use gateway::{AppConfig, DbConfig, TlConfig, TlEnviorment};
 use sqlx::{postgres::PgConnectOptions, ConnectOptions};
-use tokio::net::TcpStream;
 use uuid::Uuid;
+
+use crate::{tl_mock::TlMock, wait_for_conntection};
 
 pub struct MockEnv {
     pub base_url: String,
+    pub tl_mock: TlMock,
     _server_join_handle: JoinHandle<()>,
 }
 
@@ -23,7 +20,15 @@ impl MockEnv {
             .expect("http_port")
             .port();
 
+        let tl_client_id = String::from("test-client");
+        let tl_client_redirect_uri = String::from("test");
+        let merchant_account_id = Uuid::new_v4();
+
         let db_name = init_db().await;
+        let tl_mock = TlMock::init().await;
+        tl_mock.add_client(tl_client_id.clone(), tl_client_redirect_uri.clone());
+        tl_mock.add_merchant_account(&tl_client_id, merchant_account_id, "GBP".into(), 0);
+
         let config = AppConfig {
             http_port,
             db_config: DbConfig {
@@ -32,6 +37,15 @@ impl MockEnv {
                 port: 5432,
                 username: "postgres".into(),
                 password: "password".into(),
+            },
+            tl_config: TlConfig {
+                client_id: tl_client_id,
+                client_secret: tl_client_redirect_uri,
+                merchant_account_id,
+                redirect_uri: "".into(),
+                enviornment: TlEnviorment::Mock {
+                    url: tl_mock.base_url().into(),
+                },
             },
         };
 
@@ -45,25 +59,10 @@ impl MockEnv {
 
         MockEnv {
             base_url: format!("http://localhost:{http_port}"),
+            tl_mock,
             _server_join_handle: server_join_handle,
         }
     }
-}
-
-async fn wait_for_conntection(port: u16, timeout: Duration) {
-    async fn wait(port: u16) {
-        let addr: SocketAddr = format!("127.0.0.1:{port}").parse().unwrap();
-        loop {
-            match TcpStream::connect(addr).await {
-                Ok(_) => break,
-                _ => (),
-            }
-        }
-    }
-
-    tokio::time::timeout(timeout, wait(port))
-        .await
-        .expect("Failed to start")
 }
 
 async fn init_db() -> String {

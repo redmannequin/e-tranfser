@@ -1,4 +1,5 @@
 pub mod create_payment;
+pub mod deposit_payment;
 
 use serde::Deserialize;
 

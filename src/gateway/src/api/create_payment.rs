@@ -31,6 +31,10 @@ async fn execute(
     app: web::Data<AppContext>,
     request: Request,
 ) -> Result<impl Responder, PublicError> {
+    app.tl_client
+        .create_ma_payment(request.amount, "test")
+        .await;
+
     app.db_client
         .insert_payment(CreatePayment {
             payment_id: Uuid::new_v4(),
