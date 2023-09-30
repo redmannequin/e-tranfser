@@ -76,9 +76,7 @@ async fn execute(
                     request.amount_in_minor as _,
                 )
                 .ok_or_else(|| {
-                    PublicError::Invalid(
-                        "Invalid merchant_account_id currency pair or balance too low".into(),
-                    )
+                    PublicError::Invalid("Invalid merchant_account_id currency pair".into())
                 })?,
             _ => unimplemented!(),
         },

@@ -1,17 +1,18 @@
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::Deserialize;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{db::CreatePayment, AppContext};
+use crate::AppContext;
 
 use super::{deserialize_body, PublicError};
 
 #[derive(Debug, Deserialize)]
 struct Request {
     payment_id: Uuid,
-    email: String,
     security_answer: String,
+    iban: String,
 }
 
 #[post("/deposit_payment")]
@@ -31,12 +32,34 @@ async fn execute(
 ) -> Result<impl Responder, PublicError> {
     let payment = app.db_client.get_payment(request.payment_id).await.unwrap();
 
-    let iban = "";
-    let payment_reference = "";
+    let is_vaild = {
+        let parsed_hash = PasswordHash::new(&payment.security_answer).unwrap();
+        Argon2::default()
+            .verify_password(request.security_answer.as_bytes(), &parsed_hash)
+            .map_or(false, |_| true)
+            & !payment.deposited
+    };
 
-    app.tl_client
-        .create_payout(&payment.full_name, iban, payment.amount, payment_reference)
-        .await;
+    if is_vaild {
+        let payment_reference = "";
 
-    Ok(HttpResponse::Ok())
+        app.db_client
+            .set_payment_deposited(request.payment_id)
+            .await?;
+
+        let _ = app
+            .tl_client
+            .create_payout(
+                &payment.full_name,
+                &request.iban,
+                payment.amount,
+                payment_reference,
+            )
+            .await
+            .map_err(|_| PublicError::InternalServerError)?;
+
+        Ok(HttpResponse::Ok())
+    } else {
+        Ok(HttpResponse::Unauthorized())
+    }
 }

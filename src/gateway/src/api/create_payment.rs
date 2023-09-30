@@ -77,6 +77,7 @@ async fn execute(
             amount: request.amount,
             security_question: request.security_question,
             security_answer,
+            deposited: false,
         })
         .await?;
 

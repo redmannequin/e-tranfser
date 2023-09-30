@@ -1,5 +1,6 @@
 mod auth;
 mod create_payment;
+mod create_payout;
 mod state;
 
 use std::{net::TcpListener, thread::JoinHandle, time::Duration};
@@ -43,6 +44,7 @@ impl TlMock {
                             .app_data(app_context.clone())
                             .service(auth::auth)
                             .service(create_payment::create_payment)
+                            .service(create_payout::create_payout)
                     })
                     .bind(("0.0.0.0", http_port))?
                     .run();

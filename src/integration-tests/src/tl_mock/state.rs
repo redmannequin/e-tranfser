@@ -108,6 +108,7 @@ impl State {
         &self,
         client_id: &str,
         merchant_account_id: Uuid,
+        currency: &str,
         amount: u64,
     ) -> Option<Uuid> {
         let mut state = self.inner.lock().unwrap();
@@ -115,7 +116,7 @@ impl State {
             tl_client
                 .merchant_accounts
                 .iter_mut()
-                .find(|ma| ma.merchant_account_id == merchant_account_id)
+                .find(|ma| ma.merchant_account_id == merchant_account_id && ma.currency == currency)
                 .and_then(|ma| {
                     if ma.balance >= amount {
                         let payout_id = Uuid::new_v4();

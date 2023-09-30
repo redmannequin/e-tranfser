@@ -4,5 +4,6 @@ CREATE TABLE IF NOT EXISTS payments (
   email VARCHAR(255) NOT NULL,
   amount INTEGER NOT NULL,
   security_question VARCHAR(100),
-  security_answer VARCHAR(255)
+  security_answer VARCHAR(255),
+  deposited BOOLEAN NOT NULL
 );

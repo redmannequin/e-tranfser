@@ -7,9 +7,12 @@ use reqwest_tracing::TracingMiddleware;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{TlConfig, TlEnviorment};
+use crate::{api::PublicError, TlConfig, TlEnviorment};
 
-use super::{model::AuthResponse, CreatePaymentResponse, TlError};
+use super::{
+    model::{AuthResponse, CreatePayoutResponse},
+    CreatePaymentResponse, TlError,
+};
 
 pub struct TlClient {
     client: ClientWithMiddleware,
@@ -153,25 +156,26 @@ impl TlClient {
         payee_iban: &str,
         amount: u32,
         reference: &str,
-    ) {
-        let endpoint = format!("https://api.{}/v3/payout", "");
+    ) -> Result<CreatePayoutResponse, TlError> {
+        let endpoint = format!("http://api.{}/v3/payouts", self.enviornment.uri());
         let req = self
             .client
             .post(endpoint)
             .header("Content-Type", "application/json")
+            .header("Authorization", self.client_id.clone())
             .body(format!(
                 r#"
                     {{
                         "amount_in_minor": {},
                         "merchant_account_id": "{}",
                         "currency": "GBP",
-                        "benficiary": {{
+                        "beneficiary": {{
                             "type": "external_account",
                             "reference": "{}",
                             "account_holder_name": "{}",
                             "account_identifier": {{
                                 "type": "iban",
-                                "iban": "{}",
+                                "iban": "{}"
                             }}
                         }}
                     }}
@@ -180,7 +184,13 @@ impl TlClient {
             ))
             .build()
             .unwrap();
-        let _res = self.client.execute(req).await.unwrap();
+        let res = self.client.execute(req).await?;
+        match res.status() {
+            StatusCode::CREATED => res.json().await.map_err(TlError::Response),
+            _ => {
+                unimplemented!()
+            }
+        }
     }
 
     //

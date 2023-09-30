@@ -49,9 +49,10 @@ impl DbClient {
                     email,
                     amount,
                     security_question,
-                    security_answer
+                    security_answer,
+                    deposited
                 )
-                SELECT $1, $2, $3, $4, $5, $6
+                SELECT $1, $2, $3, $4, $5, $6, false
                 "#,
                 &[
                     &payment.payment_id,
@@ -71,7 +72,7 @@ impl DbClient {
             .inner
             .query_one(
                 r#"
-                    SELECT payment_id, full_name, email, amount, security_question, security_answer
+                    SELECT payment_id, full_name, email, amount, security_question, security_answer, deposited
                     From payments
                     WHERE payment_id = $1
                 "#,
@@ -85,7 +86,22 @@ impl DbClient {
                 amount: row.get::<_, i32>(3) as _,
                 security_question: row.get(4),
                 security_answer: row.get(5),
+                deposited: row.get(6)
             })?)
+    }
+
+    pub async fn set_payment_deposited(&self, payment_id: Uuid) -> Result<(), DbError> {
+        self.inner
+            .execute(
+                r#"
+                    UPDATE payments 
+                    SET deposited = true 
+                    WHERE payment_id = $1
+                "#,
+                &[&payment_id],
+            )
+            .await?;
+        Ok(())
     }
 }
 
