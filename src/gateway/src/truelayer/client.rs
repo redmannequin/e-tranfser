@@ -186,10 +186,7 @@ impl TlClient {
             .unwrap();
         let res = self.client.execute(req).await?;
         match res.status() {
-            StatusCode::CREATED => {
-                dbg!("trestt");
-                res.json().await.map_err(TlError::Response)
-            }
+            StatusCode::CREATED => res.json().await.map_err(TlError::Response),
             _ => {
                 unimplemented!()
             }

@@ -37,7 +37,7 @@ async fn execute(
         Argon2::default()
             .verify_password(request.security_answer.as_bytes(), &parsed_hash)
             .map_or(false, |_| true)
-            && !payment.deposited
+            & !payment.deposited
     };
 
     if is_vaild {

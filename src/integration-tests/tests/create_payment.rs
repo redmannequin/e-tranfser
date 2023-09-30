@@ -51,6 +51,27 @@ async fn create_payment() {
         .await
         .expect("reqwest::post");
 
-    dbg!("{}", &response);
     assert!(response.status().is_success());
+
+    let url = format!("{}/deposit_payment", mock_env.base_url);
+    let response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .body(format!(
+            r#"
+                {{
+                    "payment_id": "{}",
+                    "security_answer": "superman",
+                    "iban": "{}"
+
+                }}
+            "#,
+            payment["payment_id"].as_str().expect("blah"),
+            "fake_iban"
+        ))
+        .send()
+        .await
+        .expect("reqwest::post");
+
+    assert!(response.status().is_client_error())
 }
