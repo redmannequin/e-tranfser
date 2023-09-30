@@ -7,4 +7,5 @@ pub struct CreatePayment {
     pub amount: u32,
     pub security_question: String,
     pub security_answer: String,
+    pub deposited: bool,
 }

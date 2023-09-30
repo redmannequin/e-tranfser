@@ -1,6 +1,5 @@
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use uuid::Uuid;
 
 use super::{deserialize_body, AppContext, PublicError};
 

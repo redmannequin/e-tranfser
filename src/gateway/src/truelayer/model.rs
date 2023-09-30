@@ -40,3 +40,9 @@ pub struct AuthResponse {
     pub refresh_token: Option<String>,
     pub token_type: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct CreatePayoutResponse {
+    #[serde(rename = "id")]
+    payout_id: Uuid,
+}
