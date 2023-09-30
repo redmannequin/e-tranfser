@@ -3,6 +3,8 @@ pub mod deposit_payment;
 
 use serde::Deserialize;
 
+use crate::db::DbError;
+
 #[derive(thiserror::Error, Debug)]
 pub enum PublicError {
     #[error("Something went wrong. Please retry later.")]
@@ -18,6 +20,13 @@ impl From<PublicError> for actix_web::Error {
             err @ PublicError::Invalid(_) => actix_web::error::ErrorBadRequest(err),
             err => actix_web::error::ErrorInternalServerError(err),
         }
+    }
+}
+
+impl From<DbError> for PublicError {
+    #[inline]
+    fn from(_err: DbError) -> Self {
+        PublicError::InternalServerError
     }
 }
 

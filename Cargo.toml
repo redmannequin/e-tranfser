@@ -10,6 +10,7 @@ gateway = { path = "src/gateway" }
 actix-web = "4"
 actix-web-opentelemetry = "0.15"
 anyhow = "1"
+argon2 = "0.5"
 config = "0.13"
 opentelemetry = "0.20"
 opentelemetry-jaeger = "0.19"

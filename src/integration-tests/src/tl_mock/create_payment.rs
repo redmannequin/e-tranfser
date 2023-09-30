@@ -81,7 +81,7 @@ async fn execute(
         _ => unimplemented!(),
     };
 
-    Ok(HttpResponse::Ok().json(Response {
+    Ok(HttpResponse::Created().json(Response {
         id: payment_id,
         user: ResponseUserObj {
             user_id: Uuid::new_v4(),
