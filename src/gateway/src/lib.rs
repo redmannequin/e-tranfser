@@ -1,5 +1,6 @@
 mod api;
 mod db;
+mod truelayer;
 
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
