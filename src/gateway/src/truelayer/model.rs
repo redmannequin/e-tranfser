@@ -32,3 +32,11 @@ pub enum FailureStage {
     Authorizing,
     Authorized,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct AuthResponse {
+    pub acesse_token: String,
+    pub expires_in: u64,
+    pub refresh_token: Option<String>,
+    pub token_type: String,
+}

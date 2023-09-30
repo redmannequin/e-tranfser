@@ -75,13 +75,17 @@ async fn execute(
                     &request.currency,
                     request.amount_in_minor as _,
                 )
-                .unwrap(),
+                .ok_or_else(|| {
+                    PublicError::Invalid(
+                        "Invalid merchant_account_id currency pair or balance too low".into(),
+                    )
+                })?,
             _ => unimplemented!(),
         },
         _ => unimplemented!(),
     };
 
-    Ok(HttpResponse::Ok().json(Response {
+    Ok(HttpResponse::Created().json(Response {
         id: payment_id,
         user: ResponseUserObj {
             user_id: Uuid::new_v4(),

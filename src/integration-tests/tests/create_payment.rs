@@ -12,6 +12,10 @@ async fn create_payment() {
         .body(
             r#"
                 {
+                    "payer": {
+                        "full_name": "Bob Burge",
+                        "email": "bob.burge@email.com"
+                    },
                     "full_name": "John Doe",
                     "email": "john.doe@email.com",
                     "amount": 1000,
