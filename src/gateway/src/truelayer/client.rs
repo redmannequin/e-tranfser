@@ -76,7 +76,6 @@ impl TlClient {
             .build()
             .map_err(reqwest_middleware::Error::Reqwest)?;
         let res = self.client.execute(req).await?;
-
         match res.status() {
             StatusCode::OK => res.json().await.map_err(TlError::Response),
             StatusCode::BAD_REQUEST | StatusCode::INTERNAL_SERVER_ERROR => todo!(),
@@ -138,7 +137,6 @@ impl TlClient {
             .build()
             .map_err(reqwest_middleware::Error::Reqwest)?;
         let res = self.client.execute(req).await?;
-
         match res.status() {
             StatusCode::CREATED => res
                 .json::<CreatePaymentResponse>()
