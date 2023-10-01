@@ -4,7 +4,7 @@ use integration_tests::enviornment::MockEnv;
 async fn create_payment() {
     let mock_env = MockEnv::init().await;
 
-    let url = format!("{}/create_payment", mock_env.base_url);
+    let url = format!("{}/api/create_payment", mock_env.base_url);
     let client = reqwest::Client::new();
     let response = client
         .post(url)
@@ -31,7 +31,7 @@ async fn create_payment() {
     assert!(response.status().is_success());
     let payment: serde_json::Value = response.json().await.expect("parse response");
 
-    let url = format!("{}/deposit_payment", mock_env.base_url);
+    let url = format!("{}/api/deposit_payment", mock_env.base_url);
     let response = client
         .post(url)
         .header("Content-Type", "application/json")
@@ -53,7 +53,7 @@ async fn create_payment() {
 
     assert!(response.status().is_success());
 
-    let url = format!("{}/deposit_payment", mock_env.base_url);
+    let url = format!("{}/api/deposit_payment", mock_env.base_url);
     let response = client
         .post(url)
         .header("Content-Type", "application/json")
