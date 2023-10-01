@@ -12,6 +12,8 @@ pub struct TlConfig {
     pub enviornment: TlEnviorment,
     pub client_id: String,
     pub client_secret: String,
+    pub kid: String,
+    pub private_key: String,
     pub redirect_uri: String,
     pub merchant_account_id: Uuid,
 }

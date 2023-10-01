@@ -35,10 +35,16 @@ pub enum FailureStage {
 
 #[derive(Debug, Deserialize)]
 pub struct AuthResponse {
-    pub acesse_token: String,
+    pub access_token: String,
     pub expires_in: u64,
     pub refresh_token: Option<String>,
     pub token_type: String,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AuthErrorResponse {
+    error: String,
+    error_description: String,
 }
 
 #[derive(Debug, Deserialize)]

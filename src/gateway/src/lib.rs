@@ -1,4 +1,5 @@
 mod api;
+mod app;
 mod db;
 mod truelayer;
 
@@ -45,8 +46,15 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .wrap(RequestTracing::new())
             .wrap(TracingLogger::default())
             .service(web::resource("/health_check").route(web::get().to(HttpResponse::Ok)))
-            .service(api::create_payment::create_payment)
-            .service(api::deposit_payment::deposit_payment)
+            .service(web::resource("/").to(app::home))
+            .service(web::resource("/payment").to(app::payment))
+            .service(web::resource("/deposit").to(app::deposit))
+            .service(
+                web::scope("/api")
+                    .service(api::create_payment::create_payment)
+                    .service(api::deposit_payment::deposit_payment),
+            )
+            .default_service(web::to(app::not_found))
     })
     .bind(("0.0.0.0", config.http_port))?
     .run();

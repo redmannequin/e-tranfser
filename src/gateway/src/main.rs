@@ -6,8 +6,10 @@ use tracing_subscriber::{prelude::*, EnvFilter, Registry};
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
+    let env_file = std::env::var("ENV_FILE").unwrap_or_else(|_| "env-sbx.json".to_string());
+
     let config: AppConfig = Config::builder()
-        .add_source(config::File::with_name("env.json"))
+        .add_source(config::File::with_name(&env_file))
         .add_source(
             Environment::with_prefix("APP")
                 .prefix_separator("_")

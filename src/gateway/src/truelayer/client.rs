@@ -1,13 +1,14 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use reqwest::{ClientBuilder, StatusCode};
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
+use tokio::sync::Mutex;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{api::PublicError, TlConfig, TlEnviorment};
+use crate::{truelayer::model::AuthErrorResponse, TlConfig, TlEnviorment};
 
 use super::{
     model::{AuthResponse, CreatePayoutResponse},
@@ -19,6 +20,9 @@ pub struct TlClient {
     enviornment: TlEnviorment,
     client_id: String,
     client_secret: String,
+    kid: String,
+    private_key: String,
+    access_token: Arc<Mutex<Option<String>>>,
     redirect_uri: String,
     merchant_account_id: Uuid,
 }
@@ -46,6 +50,9 @@ impl TlClient {
             enviornment: tl_config.enviornment,
             client_id: tl_config.client_id,
             client_secret: tl_config.client_secret,
+            kid: tl_config.kid,
+            private_key: tl_config.private_key,
+            access_token: Arc::new(Mutex::new(None)),
             redirect_uri: tl_config.redirect_uri,
             merchant_account_id: tl_config.merchant_account_id,
         }
@@ -60,28 +67,37 @@ impl TlClient {
     //
 
     pub async fn auth_payments_v3(&self) -> Result<AuthResponse, TlError> {
-        let endpoint = format!("http://auth.{}/connect/token", self.enviornment.uri());
-        let req = self
-            .client
-            .post(endpoint)
-            .header("Content-Type", "application/json")
-            .body(format!(
-                r#"
+        let endpoint = format!("https://auth.{}/connect/token", self.enviornment.uri());
+
+        let body = format!(
+            r#"
                     {{
                         "grant_type": "client_credentials",
-                        "client_id": "{}",
                         "client_secret": "{}",
+                        "client_id": "{}",
                         "scope": "payments"
                     }}
                 "#,
-                self.client_id, self.client_secret
-            ))
+            self.client_secret, self.client_id
+        );
+
+        let req = self
+            .client
+            .post(endpoint)
+            .header("Accept", "application/json")
+            .header("Content-Type", "application/json")
+            .body(body)
             .build()
             .map_err(reqwest_middleware::Error::Reqwest)?;
+
         let res = self.client.execute(req).await?;
         match res.status() {
             StatusCode::OK => res.json().await.map_err(TlError::Response),
-            StatusCode::BAD_REQUEST | StatusCode::INTERNAL_SERVER_ERROR => todo!(),
+            StatusCode::BAD_REQUEST | StatusCode::INTERNAL_SERVER_ERROR => {
+                let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
+                println!("\nTlClient::Auth ERROR:\n{:?}", err);
+                unimplemented!()
+            }
             _ => todo!(),
         }
     }
@@ -95,57 +111,85 @@ impl TlClient {
         amount: u32,
         reference: &str,
     ) -> Result<CreatePaymentResponse, TlError> {
-        let endpoint = format!("http://api.{}/v3/payments", self.enviornment.uri());
+        let endpoint = format!("https://api.{}/v3/payments", self.enviornment.uri());
+
+        let access_token = {
+            let mut access_token = self.access_token.lock().await;
+            if access_token.is_none() {
+                *access_token = Some(self.auth_payments_v3().await?.access_token);
+            }
+            access_token.to_owned().unwrap()
+        };
+
+        let idempotency_key = Uuid::new_v4().to_string();
+        let body = format!(
+            r#"
+                {{
+                    "amount_in_minor": {},
+                    "currency": "GBP",
+                    "payment_method": {{
+                        "type": "bank_transfer",
+                        "provider_selection": {{
+                            "type": "user_selected",
+                            "scheme_selection": {{
+                                "type": "instant_only",
+                                  "allow_remitter_fee": false
+                            }}
+                        }},
+                        "beneficiary": {{
+                            "type": "merchant_account",
+                            "merchant_account_id": "{}",
+                            "reference": "{}"
+                        }}
+                    }},
+                    "user": {{
+                        "name": "{}",
+                        "email": "{}"
+                        {}
+                    }}
+                }}
+            "#,
+            amount,
+            self.merchant_account_id,
+            reference,
+            payer_full_name,
+            payer_email,
+            payer_phonenumber
+                .map(|pn| format!(r#","phone": "{}""#, pn))
+                .unwrap_or_default()
+        );
+
+        let tl_signature =
+            truelayer_signing::sign_with_pem(self.kid.as_str(), self.private_key.as_bytes())
+                .method("POST")
+                .path("/v3/payments")
+                .header("Idempotency-Key", idempotency_key.as_bytes())
+                .body(body.as_bytes())
+                .sign()
+                .unwrap();
+
         let req = self
             .client
             .post(endpoint)
             .header("Content-Type", "application/json")
-            .header("Authorization", self.client_id.clone())
-            .body(format!(
-                r#"
-                    {{
-                        "amount_in_minor": {},
-                        "currency": "GBP",
-                        "payment_method": {{
-                            "type": "bank_transfer",
-                            "provider_selection": {{
-                                "type": "user_selected",
-                                "scheme_selection": {{
-                                    "type": "instant_only",
-                                    "allow_remitter_fee": false
-                                }}
-                            }},
-                            "beneficiary": {{
-                                "type": "merchant_account",
-                                "merchant_account_id": "{}",
-                                "reference": "{}"
-                            }}
-                        }},
-                        "user": {{
-                            "name": "{}",
-                            "email": "{}"
-                            {}
-                        }}
-                    }}
-                "#,
-                amount,
-                self.merchant_account_id,
-                reference,
-                payer_full_name,
-                payer_email,
-                payer_phonenumber
-                    .map(|pn| format!(r#","phone": "{}""#, pn))
-                    .unwrap_or_default()
-            ))
+            .header("Authorization", format!("Bearer {}", access_token))
+            .header("Idempotency-Key", idempotency_key)
+            .header("Tl-Signature", tl_signature)
+            .body(body)
             .build()
             .map_err(reqwest_middleware::Error::Reqwest)?;
+
         let res = self.client.execute(req).await?;
         match res.status() {
             StatusCode::CREATED => res
                 .json::<CreatePaymentResponse>()
                 .await
                 .map_err(TlError::Response),
-            _ => todo!(),
+            _ => {
+                let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
+                println!("\nTlClient::Payment Error:\n{}", err);
+                unimplemented!()
+            }
         }
     }
 
