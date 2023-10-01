@@ -5,7 +5,7 @@ pub fn navbar() -> impl IntoView {
     view! {
         <nav class="navbar bg-success" >
             <div class="container" >
-                <a class="navbar-brand text-lgiht" href="#">Navbar</a>
+                <h1 class="navbar-brand text-light" href="#" >e-transfer</h1>
             </div>
         </nav>
     }

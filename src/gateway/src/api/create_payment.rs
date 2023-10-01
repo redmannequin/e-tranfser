@@ -9,23 +9,17 @@ use uuid::Uuid;
 
 use crate::{db::CreatePayment, AppContext};
 
-use super::{deserialize_body, PublicError};
+use super::PublicError;
 
 #[derive(Debug, Deserialize)]
-struct Request {
-    payer: Payer,
-    full_name: String,
-    email: String,
+pub struct FormData {
+    payer_full_name: String,
+    payer_email: String,
+    payee_full_name: String,
+    payee_email: String,
     amount: u32,
     security_question: String,
     security_answer: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct Payer {
-    full_name: String,
-    email: String,
-    phonenumber: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -38,25 +32,23 @@ struct Response {
 #[post("/create_payment")]
 pub async fn create_payment(
     app: web::Data<AppContext>,
-    _request: HttpRequest,
-    body: String,
+    form: web::Form<FormData>,
 ) -> Result<impl Responder, PublicError> {
-    let request = deserialize_body(&body)?;
-    execute(app, request).await
+    execute(app, form.0).await
 }
 
 #[instrument(skip(app))]
 async fn execute(
     app: web::Data<AppContext>,
-    request: Request,
+    form: FormData,
 ) -> Result<impl Responder, PublicError> {
     let payment = app
         .tl_client
         .create_ma_payment(
-            &request.payer.full_name,
-            &request.payer.email,
-            request.payer.phonenumber.as_deref(),
-            request.amount,
+            &form.payer_full_name,
+            &form.payer_email,
+            None,
+            form.amount,
             "test",
         )
         .await
@@ -65,17 +57,17 @@ async fn execute(
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let security_answer = argon2
-        .hash_password(request.security_answer.as_bytes(), &salt)
+        .hash_password(form.security_answer.as_bytes(), &salt)
         .map_err(|_| PublicError::InternalServerError)?
         .to_string();
 
     app.db_client
         .insert_payment(CreatePayment {
             payment_id: payment.payment_id,
-            full_name: request.full_name,
-            email: request.email,
-            amount: request.amount,
-            security_question: request.security_question,
+            full_name: form.payee_full_name,
+            email: form.payee_email,
+            amount: form.amount,
+            security_question: form.security_question,
             security_answer,
             deposited: false,
         })
