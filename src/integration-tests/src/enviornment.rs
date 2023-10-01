@@ -42,6 +42,8 @@ impl MockEnv {
                 client_id: tl_client_id,
                 client_secret: tl_client_redirect_uri,
                 merchant_account_id,
+                kid: Uuid::new_v4().to_string(),
+                private_key: "test".into(),
                 redirect_uri: "".into(),
                 enviornment: TlEnviorment::Mock {
                     url: tl_mock.base_url().into(),

@@ -25,7 +25,8 @@ impl From<PublicError> for actix_web::Error {
 
 impl From<DbError> for PublicError {
     #[inline]
-    fn from(_err: DbError) -> Self {
+    fn from(err: DbError) -> Self {
+        println!("\nDbERROR:\n{:?}", err);
         PublicError::InternalServerError
     }
 }

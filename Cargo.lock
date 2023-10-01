@@ -1029,6 +1029,7 @@ dependencies = [
  "tracing-actix-web",
  "tracing-opentelemetry",
  "tracing-subscriber",
+ "truelayer-signing",
  "uuid",
 ]
 
@@ -3572,6 +3573,21 @@ dependencies = [
  "tracing",
  "tracing-core",
  "tracing-log",
+]
+
+[[package]]
+name = "truelayer-signing"
+version = "0.1.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cb091d013009a0b3baa495c622a50a17ad7e4e71fad611361bf137d66472ab8"
+dependencies = [
+ "anyhow",
+ "base64 0.13.1",
+ "indexmap 1.9.3",
+ "openssl",
+ "serde",
+ "serde_json",
+ "thiserror",
 ]
 
 [[package]]
