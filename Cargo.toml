@@ -1,5 +1,8 @@
 [workspace]
-members = ["src/gateway","src/integration-tests"]
+members = [
+  "src/gateway",
+  "src/integration-tests"
+]
 resolver = "2"
 
 [workspace.dependencies]
@@ -12,6 +15,7 @@ actix-web-opentelemetry = "0.15"
 anyhow = "1"
 argon2 = "0.5"
 config = "0.13"
+leptos = "0.5"
 opentelemetry = "0.20"
 opentelemetry-jaeger = "0.19"
 reqwest = "0.11"
