@@ -1,4 +1,4 @@
-use actix_web::{http::header, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::header, post, web, HttpResponse, Responder};
 use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,

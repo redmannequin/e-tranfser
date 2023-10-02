@@ -1,7 +1,7 @@
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{HttpResponse};
 use leptos::{view, IntoView};
-use serde::Deserialize;
-use uuid::Uuid;
+
+
 
 use crate::app::component::MyHtml;
 
