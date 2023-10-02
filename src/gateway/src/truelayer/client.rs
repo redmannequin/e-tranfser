@@ -8,7 +8,7 @@ use tokio::sync::Mutex;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{truelayer::model::AuthErrorResponse, TlConfig, TlEnviorment};
+use crate::{TlConfig, TlEnviorment};
 
 use super::{
     model::{AuthResponse, CreatePayoutResponse},

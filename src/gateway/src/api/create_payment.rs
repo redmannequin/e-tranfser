@@ -1,4 +1,4 @@
-use actix_web::{http::header, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::header, post, web, HttpResponse, Responder};
 use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
@@ -77,7 +77,7 @@ async fn execute(
         "https://payment.truelayer-sandbox.com/payments#payment_id={}&resource_token={}&return_uri={}", 
         payment.payment_id, 
         payment.resource_token, 
-        "http://localhost:3000/callback"
+        app.tl_client.return_uri()
     );
 
     Ok(HttpResponse::SeeOther()
