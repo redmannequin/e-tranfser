@@ -1,12 +1,14 @@
 mod api;
 mod app;
 mod db;
+mod root_span;
 mod truelayer;
 
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
 use anyhow::Context;
 use db::DbClient;
+use root_span::DomainRootSpanBuilder;
 use serde::Deserialize;
 use tracing_actix_web::TracingLogger;
 
@@ -44,11 +46,13 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .app_data(app_context.clone())
             .wrap(Logger::default())
             .wrap(RequestTracing::new())
-            .wrap(TracingLogger::default())
+            .wrap(TracingLogger::<DomainRootSpanBuilder>::new())
             .service(web::resource("/health_check").route(web::get().to(HttpResponse::Ok)))
             .service(web::resource("/").to(app::home))
             .service(web::resource("/payment").to(app::payment))
+            .service(web::resource("/payment_sent").to(app::payment_sent))
             .service(web::resource("/deposit").to(app::deposit))
+            .service(web::resource("/callback").to(app::tl_callback))
             .service(
                 web::scope("/api")
                     .service(api::create_payment::create_payment)

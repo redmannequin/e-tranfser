@@ -16,6 +16,7 @@ config = { workspace = true }
 leptos = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-jaeger = { workspace = true, features = ["collector_client", "reqwest_collector_client", "rt-tokio"] }
+opentelemetry-stdout = { workspace = true, features = ["trace"] }
 reqwest = { workspace = true }
 reqwest-middleware = { workspace = true }
 reqwest-retry = { workspace = true }
@@ -28,6 +29,7 @@ tokio = { workspace = true }
 tokio-postgres = { workspace = true, features = ["with-uuid-1"] }
 tracing = { workspace = true }
 tracing-actix-web = { workspace = true }
+tracing-bunyan-formatter = { workspace = true }
 tracing-opentelemetry = { workspace = true }
 tracing-subscriber = { workspace = true, features = ["env-filter"] }
 truelayer-signing = { workspace = true }
