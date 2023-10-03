@@ -4,7 +4,7 @@ use serde::Deserialize;
 use tokio_postgres::{Config, NoTls};
 use uuid::Uuid;
 
-pub use self::entities::CreatePayment;
+pub use self::entities::{CreatePayment, PaymentState};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct DbConfig {
@@ -45,22 +45,27 @@ impl DbClient {
                 r#"
                 INSERT INTO payments (
                     payment_id,
-                    full_name,
-                    email,
+                    payer_full_name,
+                    payer_email,
+                    payee_full_name,
+                    payee_email,
                     amount,
                     security_question,
                     security_answer,
-                    deposited
+                    state
                 )
-                SELECT $1, $2, $3, $4, $5, $6, false
+                SELECT $1, $2, $3, $4, $5, $6, $7, $8, $9
                 "#,
                 &[
                     &payment.payment_id,
-                    &payment.full_name,
-                    &payment.email,
+                    &payment.payer_full_name,
+                    &payment.payer_email,
+                    &payment.payee_full_name,
+                    &payment.payee_email,
                     &(payment.amount as i32),
                     &payment.security_question,
                     &payment.security_answer,
+                    &(PaymentState::InboundCreated as i16)
                 ],
             )
             .await?;
@@ -72,7 +77,7 @@ impl DbClient {
             .inner
             .query_one(
                 r#"
-                    SELECT payment_id, full_name, email, amount, security_question, security_answer, deposited
+                    SELECT payment_id, payer_full_name, payer_email, payee_full_name, payee_email, amount, security_question, security_answer, state
                     From payments
                     WHERE payment_id = $1
                 "#,
@@ -81,24 +86,26 @@ impl DbClient {
             .await
             .map(|row| CreatePayment {
                 payment_id: row.get(0),
-                full_name: row.get(1),
-                email: row.get(2),
-                amount: row.get::<_, i32>(3) as _,
-                security_question: row.get(4),
-                security_answer: row.get(5),
-                deposited: row.get(6)
+                payer_full_name: row.get(1),
+                payer_email: row.get(2),
+                payee_full_name: row.get(3),
+                payee_email: row.get(4),
+                amount: row.get::<_, i32>(5) as _,
+                security_question: row.get(6),
+                security_answer: row.get(7),
+                state: PaymentState::from(row.get::<_, i16>(8) as u8)             
             })?)
     }
 
-    pub async fn set_payment_deposited(&self, payment_id: Uuid) -> Result<(), DbError> {
+    pub async fn set_payment_state(&self, payment_id: Uuid, payment_state: PaymentState) -> Result<(), DbError> {
         self.inner
             .execute(
                 r#"
                     UPDATE payments 
-                    SET deposited = true 
+                    SET state = $2 
                     WHERE payment_id = $1
                 "#,
-                &[&payment_id],
+                &[&payment_id, &(payment_state as i16)],
             )
             .await?;
         Ok(())
