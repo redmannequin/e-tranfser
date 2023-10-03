@@ -43,12 +43,33 @@ pub struct AuthResponse {
 
 #[derive(Debug, Deserialize)]
 pub struct AuthErrorResponse {
-    error: String,
-    error_description: String,
+    pub error: String,
+    pub error_description: String,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct CreatePayoutResponse {
     #[serde(rename = "id")]
-    payout_id: Uuid,
+    pub payout_id: Uuid,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GetAccounts {
+    pub results: Vec<Account>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct Account {
+    pub account_id: String,
+    pub account_type: String,
+    pub display_name: String,
+    pub currency: String,
+    pub account_number: AccountNumber,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AccountNumber {
+    pub number: Option<String>,
+    pub sort_code: Option<String>,
+    pub iban: String,
 }
