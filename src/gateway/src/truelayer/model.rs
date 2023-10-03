@@ -73,3 +73,14 @@ pub struct AccountNumber {
     pub sort_code: Option<String>,
     pub iban: String,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct GetAccountBalance {
+    pub results: Vec<AccountBalance>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct AccountBalance {
+    pub currency: String,
+    pub current: f32,
+}

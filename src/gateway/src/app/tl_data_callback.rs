@@ -26,8 +26,8 @@ pub async fn tl_data_callback(
                 .insert_header((
                     header::LOCATION,
                     format!(
-                        "/deposit_select_account?payment_id={}",
-                        query_params.payment_id
+                        "/deposit_select_account?payment_id={}&code={}",
+                        query_params.payment_id, query_params.code
                     ),
                 ))
                 .finish()
