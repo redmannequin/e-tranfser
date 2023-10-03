@@ -9,15 +9,15 @@ use crate::{
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
+    code: String,
+    #[serde(rename = "state")]
     payment_id: Uuid,
 }
 
-pub async fn tl_callback(
+pub async fn tl_data_callback(
     app: web::Data<AppContext>,
     query_params: web::Query<QueryParams>,
 ) -> HttpResponse {
-    tracing::info!("payment sent: {}", query_params.payment_id);
-
     let payment = app.db_client.get_payment(query_params.payment_id).await;
 
     match payment {
@@ -25,7 +25,10 @@ pub async fn tl_callback(
             HttpResponse::SeeOther()
                 .insert_header((
                     header::LOCATION,
-                    format!("/payment_sent?payment_id={}", query_params.payment_id),
+                    format!(
+                        "/deposit_select_account?payment_id={}",
+                        query_params.payment_id
+                    ),
                 ))
                 .finish()
         }

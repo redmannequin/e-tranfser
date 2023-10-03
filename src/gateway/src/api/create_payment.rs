@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{db::CreatePayment, AppContext};
+use crate::{db::{CreatePayment, PaymentState}, AppContext};
 
 use super::PublicError;
 
@@ -64,12 +64,14 @@ async fn execute(
     app.db_client
         .insert_payment(CreatePayment {
             payment_id: payment.payment_id,
-            full_name: form.payee_full_name,
-            email: form.payee_email,
+            payer_full_name: form.payer_full_name,
+            payer_email: form.payer_email,
+            payee_full_name: form.payee_full_name,
+            payee_email: form.payee_email,
             amount: form.amount,
             security_question: form.security_question,
             security_answer,
-            deposited: false,
+            state: PaymentState::InboundCreated,
         })
         .await?;
 

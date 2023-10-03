@@ -15,6 +15,7 @@ pub struct TlConfig {
     pub kid: String,
     pub private_key: String,
     pub redirect_uri: String,
+    pub data_redirect_uri: String,
     pub merchant_account_id: Uuid,
 }
 

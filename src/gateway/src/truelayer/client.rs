@@ -17,13 +17,14 @@ use super::{
 
 pub struct TlClient {
     client: ClientWithMiddleware,
-    enviornment: TlEnviorment,
-    client_id: String,
-    client_secret: String,
-    kid: String,
+    pub enviornment: TlEnviorment,
+    pub client_id: String,
+    pub client_secret: String,
+    pub kid: String,
     private_key: String,
     access_token: Arc<Mutex<Option<String>>>,
-    redirect_uri: String,
+    pub redirect_uri: String,
+    pub data_redirect_uri: String,
     merchant_account_id: Uuid,
 }
 
@@ -54,6 +55,7 @@ impl TlClient {
             private_key: tl_config.private_key,
             access_token: Arc::new(Mutex::new(None)),
             redirect_uri: tl_config.redirect_uri,
+            data_redirect_uri: tl_config.data_redirect_uri,
             merchant_account_id: tl_config.merchant_account_id,
         }
     }

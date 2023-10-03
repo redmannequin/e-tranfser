@@ -1,4 +1,23 @@
-use leptos::{component, view, Children, IntoView};
+use leptos::{component, view, Children, IntoAttribute, IntoView};
+
+#[component]
+pub fn my_input(
+    input_type: &'static str,
+    name: &'static str,
+    label: &'static str,
+) -> impl IntoView {
+    view! {
+        <div class="form-floating mb-3" >
+            <input
+                type={input_type}
+                id={name}
+                name={name}
+                class="form-control"
+            />
+            <label for={name}>{label}</label>
+        </div>
+    }
+}
 
 #[component]
 pub fn navbar() -> impl IntoView {
@@ -14,7 +33,7 @@ pub fn navbar() -> impl IntoView {
 #[component]
 pub fn my_html(children: Children) -> impl IntoView {
     view! {
-        <html lang="en">
+        <html lang="en" data-bs-theme="dark" >
 
         <head>
             <meta charset="utf-8"/>
@@ -26,9 +45,17 @@ pub fn my_html(children: Children) -> impl IntoView {
                 integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
                 crossorigin="anonymous"
             />
+            <style>
+                "
+                .form-signin {
+                    max-width: 450px;
+                    padding: 1rem;
+                }
+                "
+            </style>
         </head>
 
-        <body class="bg-dark" >
+        <body>
 
             <Navbar />
 
