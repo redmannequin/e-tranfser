@@ -1,34 +1,31 @@
-use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::header, post, web, HttpRequest, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::Deserialize;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::AppContext;
+use crate::{db::PaymentState, AppContext};
 
-use super::{deserialize_body, PublicError};
+use super::PublicError;
 
 #[derive(Debug, Deserialize)]
-struct Request {
+pub struct FormData {
     payment_id: Uuid,
     security_answer: String,
-    iban: String,
 }
 
 #[post("/deposit_payment")]
 pub async fn deposit_payment(
     app: web::Data<AppContext>,
-    _request: HttpRequest,
-    body: String,
+    form: web::Form<FormData>,
 ) -> Result<impl Responder, PublicError> {
-    let request = deserialize_body(&body)?;
-    execute(app, request).await
+    execute(app, form.0).await
 }
 
 #[instrument(skip(app))]
 async fn execute(
     app: web::Data<AppContext>,
-    request: Request,
+    request: FormData,
 ) -> Result<impl Responder, PublicError> {
     let payment = app.db_client.get_payment(request.payment_id).await.unwrap();
 
@@ -37,29 +34,52 @@ async fn execute(
         Argon2::default()
             .verify_password(request.security_answer.as_bytes(), &parsed_hash)
             .map_or(false, |_| true)
-            & !payment.deposited
+            && (payment.state as u8) < (PaymentState::OutboundCreated as u8)
     };
 
     if is_vaild {
-        let payment_reference = "";
-
-        app.db_client
-            .set_payment_deposited(request.payment_id)
-            .await?;
-
-        let _ = app
-            .tl_client
-            .create_payout(
-                &payment.full_name,
-                &request.iban,
-                payment.amount,
-                payment_reference,
-            )
-            .await
-            .map_err(|_| PublicError::InternalServerError)?;
-
-        Ok(HttpResponse::Ok())
+        let link = UriBuilder::new(&format!(
+            "https://auth.{}/",
+            app.tl_client.enviornment.uri()
+        ))
+        .add_param("response_type", "code")
+        .add_param("client_id", &app.tl_client.client_id)
+        .add_param("scope", "info%20accounts%20balance")
+        .add_param("redirect_uri", &app.tl_client.data_redirect_uri)
+        .add_param("providers", "uk-cs-mock%20uk-ob-all%20uk-oauth-all")
+        .add_param("state", &payment.payment_id.to_string())
+        .build();
+        Ok(HttpResponse::SeeOther()
+            .insert_header((header::LOCATION, link))
+            .take())
     } else {
         Ok(HttpResponse::Unauthorized())
+    }
+}
+
+struct UriBuilder<'a> {
+    path: &'a str,
+    params: String,
+}
+
+impl<'a> UriBuilder<'a> {
+    pub fn new(path: &'a str) -> Self {
+        Self {
+            path,
+            params: String::new(),
+        }
+    }
+
+    pub fn add_param(mut self, name: &str, value: &str) -> Self {
+        if self.params.len() > 0 {
+            self.params.push_str(&format!("&{}={}", name, value));
+        } else {
+            self.params.push_str(&format!("?{}={}", name, value));
+        }
+        self
+    }
+
+    pub fn build(self) -> String {
+        format!("{}{}", self.path, self.params)
     }
 }

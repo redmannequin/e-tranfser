@@ -22,7 +22,7 @@ pub async fn deposit(
         _ => return HttpResponse::ServiceUnavailable().body("ummm"),
     };
 
-    let from = "test";
+    let from = payment.payer_full_name;
     let payment_id = payment.payment_id.to_string();
     let amount = payment.amount;
     let security_question = payment.security_question;

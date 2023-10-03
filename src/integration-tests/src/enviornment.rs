@@ -45,6 +45,7 @@ impl MockEnv {
                 kid: Uuid::new_v4().to_string(),
                 private_key: "test".into(),
                 redirect_uri: "".into(),
+                data_redirect_uri: "".into(),
                 enviornment: TlEnviorment::Mock {
                     url: tl_mock.base_url().into(),
                 },
