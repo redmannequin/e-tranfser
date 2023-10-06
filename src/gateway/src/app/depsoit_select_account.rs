@@ -1,10 +1,10 @@
 use actix_web::{web, HttpResponse};
 use futures::future::join_all;
-use leptos::{view, CollectView, IntoView};
+use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{app::component::MyHtml, truelayer::model::AccountBalance, AppContext};
+use crate::{app::component::MyHtml, truelayer::model::AccountBalance, AppContext, TlClient};
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
@@ -23,43 +23,36 @@ pub async fn deposit_select_account(
         .unwrap()
         .access_token;
 
-    let accounts = app.tl_client.get_accounts(&token).await.unwrap().results;
-
-    let account_balances: Vec<AccountBalance> = join_all::<Vec<_>>(
-        accounts
-            .iter()
-            .map(|a| async {
-                app.tl_client
-                    .get_account_balance(&token, a.account_id.clone())
-                    .await
-            })
-            .collect(),
-    )
-    .await
-    .into_iter()
-    .map(|a: Result<AccountBalance, _>| a.unwrap())
-    .collect();
-
-    let accounts_view = accounts
+    let accounts: Vec<Account> = {
+        let accounts = app.tl_client.get_accounts(&token).await.unwrap().results;
+        join_all::<Vec<_>>(
+            accounts
+                .iter()
+                .map(|a| async {
+                    app.tl_client
+                        .get_account_balance(&token, a.account_id.clone())
+                        .await
+                })
+                .collect(),
+        )
+        .await
         .into_iter()
-        .zip(account_balances.into_iter())
-        .map(|(a, b)| {
-            view! {
-                <p class="btn btn-success" >
-                    <p>Name: {a.display_name}</p>
-                    <p>Balance: {b.current}</p>
-                    <p>Iban: {a.account_number.iban}</p>
-                </p>
-            }
+        .map(|a: Result<AccountBalance, _>| a.unwrap())
+        .zip(accounts.into_iter())
+        .map(|(b, a)| Account {
+            name: a.display_name,
+            balance: b.current,
+            iban: a.account_number.iban,
         })
-        .collect_view();
+        .collect()
+    };
 
     let html = leptos::ssr::render_to_string(|| {
         view! {
             <MyHtml>
-                <div class="container-sm form-signin w-100 m-auto text-center" >
-                    <h1>"Select Account!"</h1>
-                    {accounts_view}
+                <div class="container-sm form-signin w-100 m-auto" >
+                    <h1 class="text-center" >"Select Account"</h1>
+                    <AccountList accounts={accounts} />
                 </div>
             </MyHtml>
         }
@@ -68,4 +61,29 @@ pub async fn deposit_select_account(
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(html.as_str().to_string())
+}
+
+struct Account {
+    name: String,
+    balance: f32,
+    iban: String,
+}
+
+#[component]
+fn account_list(accounts: Vec<Account>) -> impl IntoView {
+    let accounts_view = accounts.into_iter().map(|a| view! {
+        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start" >
+            <div class="d-flex w-100 justify-content-between" >
+                <h5 class="mb-1" >{a.name}</h5>
+                <small>{a.balance}</small>
+            </div>
+            <small>{a.iban}</small>
+        </a>
+    }).collect_view();
+
+    return view! {
+        <ul class="list-group list-group-flush">
+            { accounts_view }
+        </ul>
+    };
 }
