@@ -8,7 +8,7 @@ pub async fn not_found(_req: HttpRequest) -> HttpResponse {
         view! {
             <MyHtml>
                 <div class="container text-light" >
-                    <h1>"Not Found Page!"</h1>
+                    <h1>"Not Found"</h1>
                 </div>
             </MyHtml>
         }

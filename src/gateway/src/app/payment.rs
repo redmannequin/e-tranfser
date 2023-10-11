@@ -14,7 +14,7 @@ pub async fn payment(_req: HttpRequest) -> HttpResponse {
                         <h1 class="text-light mb-3 fw-normal">Create Payment</h1>
 
                         <MyInput input_type="text" name="payer_full_name" label="Benefactor Name" />
-                        <MyInput input_type="email" name="payer_email" label="Benefactor email" />
+                        <MyInput input_type="email" name="payer_email" label="Benefactor Email" />
                         <MyInput input_type="text" name="payee_full_name" label="Recipiant Name" />
                         <MyInput input_type="email" name="payee_email" label="Recipiant Email" />
                         <MyInput input_type="text" name="amount" label="Amount" />

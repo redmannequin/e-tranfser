@@ -1,5 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
+use actix_web::http::header;
 use reqwest::{ClientBuilder, StatusCode};
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
@@ -11,7 +12,7 @@ use uuid::Uuid;
 use crate::{TlConfig, TlEnviorment};
 
 use super::{
-    model::{AuthResponse, CreatePayoutResponse},
+    model::{AccountBalance, AuthResponse, CreatePayoutResponse, GetAccountBalance, GetAccounts},
     CreatePaymentResponse, TlError,
 };
 
@@ -243,8 +244,8 @@ impl TlClient {
     //  DATA API
     //
 
-    pub async fn auth_data(&self) {
-        let endpoint = "https://auth.turelayer.com/connect/token";
+    pub async fn auth_data(&self, code: &str) -> Result<AuthResponse, TlError> {
+        let endpoint = format!("https://auth.{}/connect/token", self.enviornment.uri());
         let req = self
             .client
             .post(endpoint)
@@ -252,21 +253,77 @@ impl TlClient {
             .body(format!(
                 r#"
                     {{
-                        "grant_type": "authoriztion_code",
-                        "client_id": {},
-                        "client_secret": {},
-                        "code": {},
-                        "redirect_uri": {}
+                        "client_id": "{}",
+                        "client_secret": "{}",
+                        "code": "{}",
+                        "grant_type": "authorization_code",
+                        "redirect_uri": "{}"
                     }}
                 "#,
-                "clinet_id", "client_secret", "code", "redirect_uri"
+                self.client_id, self.client_secret, code, self.data_redirect_uri
             ))
             .build()
             .unwrap();
-        let _res = self.client.execute(req).await.unwrap();
+        let res = self.client.execute(req).await?;
+        match res.status() {
+            StatusCode::OK => res.json().await.map_err(TlError::Response),
+            _ => {
+                let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
+                println!("\nTlClient::DataAuth Error:\n{}", err);
+                unimplemented!()
+            }
+        }
     }
 
-    pub async fn get_accounts(&self) {
-        let _endpoint = format!("https://api.{}/data/v1/accounts", "");
+    pub async fn get_accounts(&self, access_token: &str) -> Result<GetAccounts, TlError> {
+        let endpoint = format!("https://api.{}/data/v1/accounts", self.enviornment.uri());
+        let req = self
+            .client
+            .get(endpoint)
+            .header(header::ACCEPT, "application/json")
+            .header("Authorization", format!("Bearer {}", access_token))
+            .build()
+            .unwrap();
+        let res = self.client.execute(req).await?;
+        match res.status() {
+            StatusCode::OK => res.json().await.map_err(TlError::Response),
+            _ => {
+                let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
+                println!("\nTlClient::GetAccounts Error:\n{}", err);
+                unimplemented!()
+            }
+        }
+    }
+
+    pub async fn get_account_balance(
+        &self,
+        access_token: &str,
+        account_id: String,
+    ) -> Result<AccountBalance, TlError> {
+        let endpoint = format!(
+            "https://api.{}/data/v1/accounts/{}/balance",
+            self.enviornment.uri(),
+            account_id
+        );
+        let req = self
+            .client
+            .get(endpoint)
+            .header(header::ACCEPT, "application/json")
+            .header("Authorization", format!("Bearer {}", access_token))
+            .build()
+            .unwrap();
+        let res = self.client.execute(req).await?;
+        match res.status() {
+            StatusCode::OK => res
+                .json::<GetAccountBalance>()
+                .await
+                .map(|mut a| a.results.pop().unwrap())
+                .map_err(TlError::Response),
+            _ => {
+                let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
+                println!("\nTlClient::GetAccounts Error:\n{}", err);
+                unimplemented!()
+            }
+        }
     }
 }
