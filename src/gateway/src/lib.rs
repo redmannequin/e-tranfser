@@ -58,7 +58,8 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .service(
                 web::scope("/api")
                     .service(api::create_payment::create_payment)
-                    .service(api::deposit_payment::deposit_payment),
+                    .service(api::deposit_payment::deposit_payment)
+                    .service(api::tl_webhooks::tl_webhook),
             )
             .default_service(web::to(app::not_found))
     })
