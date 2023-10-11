@@ -9,6 +9,7 @@ use crate::{api::deserialize_body, db::PaymentState, AppContext};
 use super::PublicError;
 
 #[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum TlWebhook {
     PaymentAuthorized {
         event_id: Uuid,
