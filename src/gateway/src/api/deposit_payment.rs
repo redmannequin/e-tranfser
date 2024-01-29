@@ -1,4 +1,4 @@
-use actix_web::{http::header, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::{http::header, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use serde::Deserialize;
 use tracing::instrument;
@@ -71,7 +71,7 @@ impl<'a> UriBuilder<'a> {
     }
 
     pub fn add_param(mut self, name: &str, value: &str) -> Self {
-        if self.params.len() > 0 {
+        if !self.params.is_empty() {
             self.params.push_str(&format!("&{}={}", name, value));
         } else {
             self.params.push_str(&format!("?{}={}", name, value));

@@ -4,7 +4,7 @@ use serde::Deserialize;
 use tokio_postgres::{Config, NoTls};
 use uuid::Uuid;
 
-pub use self::entities::{CreatePayment, PaymentState};
+pub use self::entities::{CreatePayment, PaymentState, User};
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct DbConfig {
@@ -109,6 +109,27 @@ impl DbClient {
             )
             .await?;
         Ok(())
+    }
+
+
+    pub async fn insert_user(&self, user: User) -> Result<(), DbError> {
+        self.inner.execute(
+            r#"
+            INSERT INTO users (
+                first_name,
+                last_name,
+                email,
+                primary_account_id
+            )
+            SELECT $1, $2, $3, $4
+            "#, &[
+                &user.first_name,
+                &user.last_name,
+                &user.email,
+                &Option::<Uuid>::None
+            ]
+        ).await?;
+            Ok(())
     }
 }
 

@@ -28,8 +28,8 @@ pub enum TlEnviorment {
 }
 
 impl TlEnviorment {
-    const SANDBOX_URI: &str = "truelayer-sandbox.com";
-    const PRODUCTION_URI: &str = "truelayer.com";
+    const SANDBOX_URI: &'static str = "truelayer-sandbox.com";
+    const PRODUCTION_URI: &'static str = "truelayer.com";
 
     pub fn uri(&self) -> String {
         match self {

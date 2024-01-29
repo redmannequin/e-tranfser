@@ -1,5 +1,5 @@
 use actix_web::{HttpRequest, HttpResponse};
-use leptos::{view, IntoView};
+use leptos::view;
 
 use crate::app::component::MyHtml;
 

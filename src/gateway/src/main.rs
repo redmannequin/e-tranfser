@@ -1,9 +1,8 @@
 use anyhow::Context;
 use config::{Config, Environment};
 use gateway::AppConfig;
-use opentelemetry::{
-    global, runtime::Tokio, sdk::trace::TracerProvider, trace::TracerProvider as _,
-};
+use opentelemetry::{global, trace::TracerProvider as _};
+use opentelemetry_sdk::{runtime::Tokio, trace::TracerProvider};
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 

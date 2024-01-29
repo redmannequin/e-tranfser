@@ -13,6 +13,15 @@ pub struct CreatePayment {
     pub state: PaymentState,
 }
 
+#[derive(Debug, Clone)]
+pub struct User {
+    pub user_id: Uuid,
+    pub first_name: String,
+    pub last_name: String,
+    pub email: String,
+    pub primary_account_id: Option<Uuid>,
+}
+
 #[repr(u8)]
 #[derive(Debug, Clone, Copy)]
 pub enum PaymentState {
@@ -47,7 +56,7 @@ impl From<u8> for PaymentState {
             20 => PaymentState::RefundCreated,
             21 => PaymentState::RefundAuthorized,
             22 => PaymentState::RefundExecuted,
-            22 => PaymentState::RefundFailed,
+            23 => PaymentState::RefundFailed,
             40 => PaymentState::OutboundCreated,
             41 => PaymentState::OutboundAuthorized,
             42 => PaymentState::OutboundExecuted,

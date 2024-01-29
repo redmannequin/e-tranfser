@@ -1,5 +1,6 @@
 pub mod create_payment;
 pub mod deposit_payment;
+pub mod register;
 pub mod tl_webhooks;
 
 use serde::Deserialize;

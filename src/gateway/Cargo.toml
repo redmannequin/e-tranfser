@@ -16,7 +16,12 @@ config = { workspace = true }
 futures = { workspace = true }
 leptos = { workspace = true }
 opentelemetry = { workspace = true }
-opentelemetry-jaeger = { workspace = true, features = ["collector_client", "reqwest_collector_client", "rt-tokio"] }
+opentelemetry-jaeger = { workspace = true, features = [
+    "collector_client",
+    "reqwest_collector_client",
+    "rt-tokio",
+] }
+opentelemetry_sdk = { workspace = true }
 opentelemetry-stdout = { workspace = true, features = ["trace"] }
 reqwest = { workspace = true }
 reqwest-middleware = { workspace = true }

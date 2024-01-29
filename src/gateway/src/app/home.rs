@@ -1,5 +1,5 @@
 use actix_web::{HttpRequest, HttpResponse};
-use leptos::{view, IntoView};
+use leptos::view;
 
 use crate::app::component::MyHtml;
 
@@ -11,6 +11,7 @@ pub async fn home(_req: HttpRequest) -> HttpResponse {
                     <h1 class="text-center" >"Welcome to e-transfer"</h1>
                     <a class="btn btn-success" href="/payment" >Move Money</a>
                     <a class="btn btn-success ms-1" href="/login" >Sign In</a>
+                    <a class="btn btn-success ms-1" href="/register" >Register</a>
                 </div>
             </MyHtml>
         }
