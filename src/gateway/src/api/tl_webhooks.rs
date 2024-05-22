@@ -2,6 +2,7 @@ use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::{ensure, Context};
 use serde::Deserialize;
 use tracing::warn;
+use truelayer_signing::Method;
 use uuid::Uuid;
 
 use crate::{api::deserialize_body, db::PaymentState, AppContext};
@@ -145,7 +146,7 @@ async fn verify_hook(parts: HttpRequest, body: &[u8]) -> anyhow::Result<()> {
     let jwks = reqwest::Client::builder()
         .build()
         .unwrap()
-        .get(jku)
+        .get(jku.as_ref())
         .send()
         .await?
         .error_for_status()?
@@ -154,7 +155,7 @@ async fn verify_hook(parts: HttpRequest, body: &[u8]) -> anyhow::Result<()> {
 
     // verify signature using the jwks
     truelayer_signing::verify_with_jwks(&jwks)
-        .method("POST")
+        .method(Method::Post)
         .path(parts.path())
         .headers(
             parts
@@ -163,6 +164,7 @@ async fn verify_hook(parts: HttpRequest, body: &[u8]) -> anyhow::Result<()> {
                 .map(|(h, v)| (h.as_str(), v.as_bytes())),
         )
         .body(body)
+        .build_verifier()
         .verify(tl_signature)?;
 
     Ok(())

@@ -4,7 +4,7 @@ use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{app::component::MyHtml, truelayer::model::AccountBalance, AppContext, TlClient};
+use crate::{app::component::MyHtml, truelayer::model::AccountBalance, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
@@ -81,9 +81,9 @@ fn account_list(accounts: Vec<Account>) -> impl IntoView {
         </a>
     }).collect_view();
 
-    return view! {
+    view! {
         <ul class="list-group list-group-flush">
             { accounts_view }
         </ul>
-    };
+    }
 }

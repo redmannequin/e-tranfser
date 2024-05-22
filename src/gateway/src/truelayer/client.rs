@@ -7,6 +7,7 @@ use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
 use tokio::sync::Mutex;
 use tracing::instrument;
+use truelayer_signing::Method;
 use uuid::Uuid;
 
 use crate::{TlConfig, TlEnviorment};
@@ -164,10 +165,11 @@ impl TlClient {
 
         let tl_signature =
             truelayer_signing::sign_with_pem(self.kid.as_str(), self.private_key.as_bytes())
-                .method("POST")
+                .method(Method::Post)
                 .path("/v3/payments")
                 .header("Idempotency-Key", idempotency_key.as_bytes())
                 .body(body.as_bytes())
+                .build_signer()
                 .sign()
                 .unwrap();
 
@@ -280,8 +282,11 @@ impl TlClient {
         let req = self
             .client
             .get(endpoint)
-            .header(header::ACCEPT, "application/json")
-            .header("Authorization", format!("Bearer {}", access_token))
+            .header(header::ACCEPT.as_str(), "application/json")
+            .header(
+                header::AUTHORIZATION.as_str(),
+                format!("Bearer {}", access_token),
+            )
             .build()
             .unwrap();
         let res = self.client.execute(req).await?;
@@ -308,8 +313,11 @@ impl TlClient {
         let req = self
             .client
             .get(endpoint)
-            .header(header::ACCEPT, "application/json")
-            .header("Authorization", format!("Bearer {}", access_token))
+            .header(header::ACCEPT.as_str(), "application/json")
+            .header(
+                header::AUTHORIZATION.as_str(),
+                format!("Bearer {}", access_token),
+            )
             .build()
             .unwrap();
         let res = self.client.execute(req).await?;

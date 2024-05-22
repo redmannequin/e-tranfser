@@ -1,8 +1,13 @@
 use anyhow::Context;
 use config::{Config, Environment};
 use gateway::AppConfig;
-use opentelemetry::{global, trace::TracerProvider as _};
-use opentelemetry_sdk::{runtime::Tokio, trace::TracerProvider};
+use opentelemetry::{trace::TracerProvider as _, KeyValue};
+use opentelemetry_otlp::WithExportConfig;
+use opentelemetry_sdk::{
+    trace::{self as sdktrace, TracerProvider},
+    Resource,
+};
+use opentelemetry_semantic_conventions::resource::SERVICE_NAME;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
@@ -31,20 +36,24 @@ fn init_telemtry() {
     const APP_TELEMETRY_ENDPOINT: &str = "http://localhost:14268/api/traces";
 
     let tracer = if false {
-        // start jaeger trace pipeline
-        global::set_text_map_propagator(opentelemetry_jaeger::Propagator::new());
-        opentelemetry_jaeger::new_collector_pipeline()
-            .with_service_name(APP_NAME)
-            .with_endpoint(APP_TELEMETRY_ENDPOINT)
-            .with_reqwest()
-            .install_batch(Tokio)
-            .expect("Failed to install OpenTelemetry tracer.")
+        opentelemetry_otlp::new_pipeline()
+            .tracing()
+            .with_exporter(
+                opentelemetry_otlp::new_exporter()
+                    .tonic()
+                    .with_endpoint(APP_TELEMETRY_ENDPOINT),
+            )
+            .with_trace_config(
+                sdktrace::config()
+                    .with_resource(Resource::new(vec![KeyValue::new(SERVICE_NAME, APP_NAME)])),
+            )
+            .install_batch(opentelemetry_sdk::runtime::Tokio)
+            .unwrap()
     } else {
-        // start stdio trace pipeline
-        let provider = TracerProvider::builder()
+        TracerProvider::builder()
             .with_simple_exporter(opentelemetry_stdout::SpanExporter::default())
-            .build();
-        provider.tracer(APP_NAME)
+            .build()
+            .tracer(APP_NAME)
     };
 
     // initialize `tracing` using `opentelemetry-tracing` and configure logging
