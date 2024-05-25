@@ -1,10 +1,11 @@
 use actix_web::{http::header, post, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
+use domain::{Payment, PaymentState};
 use serde::Deserialize;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{db::PaymentState, AppContext};
+use crate::AppContext;
 
 use super::PublicError;
 
@@ -27,14 +28,19 @@ async fn execute(
     app: web::Data<AppContext>,
     request: FormData,
 ) -> Result<impl Responder, PublicError> {
-    let payment = app.db_client.get_payment(request.payment_id).await.unwrap();
+    let payment = app
+        .db_client
+        .get_payment::<Payment>(request.payment_id)
+        .await?
+        .map(|(p, _)| p)
+        .ok_or(PublicError::Invalid(String::from("test")))?;
 
     let is_vaild = {
         let parsed_hash = PasswordHash::new(&payment.security_answer).unwrap();
         Argon2::default()
             .verify_password(request.security_answer.as_bytes(), &parsed_hash)
             .map_or(false, |_| true)
-            && (payment.state as u8) < (PaymentState::OutboundCreated as u8)
+            && (payment.payment_state as u8) < (PaymentState::OutboundCreated as u8)
     };
 
     if is_vaild {

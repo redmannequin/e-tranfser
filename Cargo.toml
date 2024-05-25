@@ -1,10 +1,19 @@
 [workspace]
-members = ["src/gateway", "src/integration-tests"]
+members = [
+    "src/db",
+    "src/domain",
+    "src/gateway",
+    "src/integration-tests",
+    "src/truelayer",
+]
 resolver = "2"
 
 [workspace.dependencies]
 # Local
+db = { path = "src/db" }
+domain = { path = "src/domain" }
 gateway = { path = "src/gateway" }
+truelayer = { path = "src/truelayer" }
 
 # External
 actix-web = "4"

@@ -1,9 +1,9 @@
 use actix_web::{post, web, HttpResponse, Responder};
+use domain::{User, UserId};
 use serde::Deserialize;
 use tracing::instrument;
-use uuid::Uuid;
 
-use crate::{db::User, AppContext};
+use crate::AppContext;
 
 use super::PublicError;
 
@@ -27,12 +27,16 @@ async fn execute(
     app: web::Data<AppContext>,
     request: FormData,
 ) -> Result<impl Responder, PublicError> {
-    app.db_client.insert_user(User {
-        user_id: Uuid::new_v4(),
-        first_name: request.first_name,
-        last_name: request.last_name,
-        email: request.email,
-        primary_account_id: None,
-    });
+    app.db_client
+        .upsert_user(
+            User {
+                user_id: UserId::new(),
+                email: request.email,
+                first_name: request.first_name,
+                last_name: request.last_name,
+            },
+            0,
+        )
+        .await?;
     Ok(HttpResponse::Unauthorized())
 }

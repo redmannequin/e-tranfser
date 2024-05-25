@@ -19,4 +19,3 @@ impl RootSpanBuilder for DomainRootSpanBuilder {
         DefaultRootSpanBuilder::on_request_end(span, response);
     }
 }
-

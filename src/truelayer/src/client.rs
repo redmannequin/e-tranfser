@@ -1,7 +1,9 @@
 use std::{sync::Arc, time::Duration};
 
-use actix_web::http::header;
-use reqwest::{ClientBuilder, StatusCode};
+use reqwest::{
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    ClientBuilder, StatusCode,
+};
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
@@ -88,8 +90,8 @@ impl TlClient {
         let req = self
             .client
             .post(endpoint)
-            .header("Accept", "application/json")
-            .header("Content-Type", "application/json")
+            .header(ACCEPT, "application/json")
+            .header(CONTENT_TYPE, "application/json")
             .body(body)
             .build()
             .map_err(reqwest_middleware::Error::Reqwest)?;
@@ -176,8 +178,8 @@ impl TlClient {
         let req = self
             .client
             .post(endpoint)
-            .header("Content-Type", "application/json")
-            .header("Authorization", format!("Bearer {}", access_token))
+            .header(CONTENT_TYPE, "application/json")
+            .header(AUTHORIZATION, format!("Bearer {}", access_token))
             .header("Idempotency-Key", idempotency_key)
             .header("Tl-Signature", tl_signature)
             .body(body)
@@ -210,8 +212,8 @@ impl TlClient {
         let req = self
             .client
             .post(endpoint)
-            .header("Content-Type", "application/json")
-            .header("Authorization", self.client_id.clone())
+            .header(CONTENT_TYPE, "application/json")
+            .header(AUTHORIZATION, self.client_id.clone())
             .body(format!(
                 r#"
                     {{
@@ -251,7 +253,7 @@ impl TlClient {
         let req = self
             .client
             .post(endpoint)
-            .header("Content-Type", "application/json")
+            .header(CONTENT_TYPE, "application/json")
             .body(format!(
                 r#"
                     {{
@@ -282,11 +284,8 @@ impl TlClient {
         let req = self
             .client
             .get(endpoint)
-            .header(header::ACCEPT.as_str(), "application/json")
-            .header(
-                header::AUTHORIZATION.as_str(),
-                format!("Bearer {}", access_token),
-            )
+            .header(ACCEPT, "application/json")
+            .header(AUTHORIZATION, format!("Bearer {}", access_token))
             .build()
             .unwrap();
         let res = self.client.execute(req).await?;
@@ -313,11 +312,8 @@ impl TlClient {
         let req = self
             .client
             .get(endpoint)
-            .header(header::ACCEPT.as_str(), "application/json")
-            .header(
-                header::AUTHORIZATION.as_str(),
-                format!("Bearer {}", access_token),
-            )
+            .header(ACCEPT, "application/json")
+            .header(AUTHORIZATION, format!("Bearer {}", access_token))
             .build()
             .unwrap();
         let res = self.client.execute(req).await?;

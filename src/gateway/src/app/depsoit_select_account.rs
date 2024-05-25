@@ -2,9 +2,10 @@ use actix_web::{web, HttpResponse};
 use futures::future::join_all;
 use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
+use truelayer::model::AccountBalance;
 use uuid::Uuid;
 
-use crate::{app::component::MyHtml, truelayer::model::AccountBalance, AppContext};
+use crate::{app::component::MyHtml, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {

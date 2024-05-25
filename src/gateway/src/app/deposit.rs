@@ -1,4 +1,5 @@
 use actix_web::{web, HttpResponse};
+use domain::Payment;
 use leptos::view;
 use serde::Deserialize;
 use uuid::Uuid;
@@ -17,8 +18,12 @@ pub async fn deposit(
     app: web::Data<AppContext>,
     query_params: web::Query<QueryParams>,
 ) -> HttpResponse {
-    let payment = match app.db_client.get_payment(query_params.payment_id).await {
-        Ok(payment) => payment,
+    let payment = match app
+        .db_client
+        .get_payment::<Payment>(query_params.payment_id)
+        .await
+    {
+        Ok(Some((payment, _))) => payment,
         _ => return HttpResponse::ServiceUnavailable().body("ummm"),
     };
 

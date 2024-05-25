@@ -1,11 +1,12 @@
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::{ensure, Context};
+use domain::{Payment, PaymentState};
 use serde::Deserialize;
 use tracing::warn;
 use truelayer_signing::Method;
 use uuid::Uuid;
 
-use crate::{api::deserialize_body, db::PaymentState, AppContext};
+use crate::{api::deserialize_body, AppContext};
 
 use super::PublicError;
 
@@ -99,24 +100,44 @@ pub async fn tl_webhook(
 
     match webhook {
         TlWebhook::PaymentAuthorized { payment_id, .. } => {
-            app.db_client
-                .set_payment_state(payment_id, PaymentState::InboundAuthorized)
-                .await?;
+            let (mut payment, version) = app
+                .db_client
+                .get_payment::<Payment>(payment_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            payment.payment_state = PaymentState::InboundAuthorized;
+            app.db_client.upsert_payment(payment, version + 1).await?;
         }
         TlWebhook::PaymentExecuted { payment_id, .. } => {
-            app.db_client
-                .set_payment_state(payment_id, PaymentState::InboundExecuted)
-                .await?;
+            let (mut payment, version) = app
+                .db_client
+                .get_payment::<Payment>(payment_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            payment.payment_state = PaymentState::InboundExecuted;
+            app.db_client.upsert_payment(payment, version + 1).await?;
         }
         TlWebhook::PaymentSettled { payment_id, .. } => {
-            app.db_client
-                .set_payment_state(payment_id, PaymentState::InboundSettled)
-                .await?;
+            let (mut payment, version) = app
+                .db_client
+                .get_payment::<Payment>(payment_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            payment.payment_state = PaymentState::InboundSettled;
+            app.db_client.upsert_payment(payment, version + 1).await?;
         }
         TlWebhook::PaymentFailed { payment_id, .. } => {
-            app.db_client
-                .set_payment_state(payment_id, PaymentState::InboundFailed)
-                .await?;
+            let (mut payment, version) = app
+                .db_client
+                .get_payment::<Payment>(payment_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            payment.payment_state = PaymentState::InboundFailed;
+            app.db_client.upsert_payment(payment, version + 1).await?;
         }
         _ => unimplemented!(),
     }

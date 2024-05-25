@@ -1,11 +1,9 @@
 use actix_web::{http::header, web, HttpResponse};
+use domain::{Payment, PaymentState};
 use serde::Deserialize;
 use uuid::Uuid;
 
-use crate::{
-    db::{CreatePayment, PaymentState},
-    AppContext,
-};
+use crate::AppContext;
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
@@ -21,7 +19,9 @@ pub async fn tl_data_callback(
     let payment = app.db_client.get_payment(query_params.payment_id).await;
 
     match payment {
-        Ok(CreatePayment { state, .. }) if (state as u8) >= (PaymentState::InboundCreated as _) => {
+        Ok(Some((Payment { payment_state, .. }, _)))
+            if (payment_state as u8) >= (PaymentState::InboundCreated as _) =>
+        {
             HttpResponse::SeeOther()
                 .insert_header((
                     header::LOCATION,

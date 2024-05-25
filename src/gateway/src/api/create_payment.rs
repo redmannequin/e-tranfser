@@ -3,11 +3,12 @@ use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
 };
+use domain::{Payment, PaymentId, PaymentState};
 use serde::{Deserialize, Serialize};
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::{db::{CreatePayment, PaymentState}, AppContext};
+use crate::AppContext;
 
 use super::PublicError;
 
@@ -62,23 +63,26 @@ async fn execute(
         .to_string();
 
     app.db_client
-        .insert_payment(CreatePayment {
-            payment_id: payment.payment_id,
-            payer_full_name: form.payer_full_name,
-            payer_email: form.payer_email,
-            payee_full_name: form.payee_full_name,
-            payee_email: form.payee_email,
-            amount: form.amount,
-            security_question: form.security_question,
-            security_answer,
-            state: PaymentState::InboundCreated,
-        })
+        .upsert_payment(
+            Payment {
+                payment_id: PaymentId::from_uuid(payment.payment_id),
+                payer_full_name: form.payer_full_name,
+                payer_email: form.payer_email,
+                payee_full_name: form.payee_full_name,
+                payee_email: form.payee_email,
+                amount: form.amount,
+                security_question: form.security_question,
+                security_answer,
+                payment_state: PaymentState::InboundCreated,
+            },
+            0,
+        )
         .await?;
 
     let auth_link = format!(
         "https://payment.truelayer-sandbox.com/payments#payment_id={}&resource_token={}&return_uri={}", 
-        payment.payment_id, 
-        payment.resource_token, 
+        payment.payment_id,
+        payment.resource_token,
         app.tl_client.return_uri()
     );
 
