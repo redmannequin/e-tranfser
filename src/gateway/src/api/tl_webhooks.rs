@@ -16,24 +16,22 @@ use super::PublicError;
 pub enum TlWebhook {
     PaymentAuthorized {
         event_id: Uuid,
-        event_version: String,
+        event_version: u32,
         payment_id: Uuid,
         authorized_at: String,
         payment_source: Option<PaymentSource>,
     },
     PaymentExecuted {
         event_id: Uuid,
-        event_version: String,
+        event_version: u32,
         payment_id: Uuid,
-        payment_method: PaymentMethod,
         executed_at: String,
         payment_source: Option<PaymentSource>,
     },
     PaymentFailed {
         event_id: Uuid,
-        event_version: String,
+        event_version: u32,
         payment_id: Uuid,
-        payment_method: PaymentMethod,
         failed_at: String,
         failed_stage: String,
         failure_reason: String,
@@ -41,16 +39,15 @@ pub enum TlWebhook {
     },
     PaymentSettled {
         event_id: Uuid,
-        event_version: String,
+        event_version: u32,
         payment_id: Uuid,
-        payment_method: PaymentMethod,
         settled_at: String,
         payment_source: Option<PaymentSource>,
         user_id: String,
     },
     ExternalPaymentReceived {
         event_id: Uuid,
-        event_version: String,
+        event_version: u32,
         transaction_id: Uuid,
         currency: String,
         amount_in_minor: String,
@@ -67,6 +64,7 @@ pub struct PaymentSource {
 }
 
 #[derive(Debug, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case")]
 pub enum AccountIdentifier {
     Iban {
         iban: String,
@@ -76,9 +74,6 @@ pub enum AccountIdentifier {
         account_number: String,
     },
 }
-
-#[derive(Debug, Deserialize)]
-pub struct PaymentMethod {}
 
 #[derive(Debug, Deserialize)]
 pub struct Remitter {
