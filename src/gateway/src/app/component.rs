@@ -1,4 +1,4 @@
-use leptos::{component, view, Children, IntoAttribute, IntoView};
+use leptos::{component, view, Children, IntoView};
 
 #[component]
 pub fn my_input(

@@ -1,9 +1,10 @@
 pub mod create_payment;
 pub mod deposit_payment;
+pub mod register;
+pub mod tl_webhooks;
 
+use db::error::DbError;
 use serde::Deserialize;
-
-use crate::db::DbError;
 
 #[derive(thiserror::Error, Debug)]
 pub enum PublicError {

@@ -2,9 +2,10 @@ use actix_web::{web, HttpResponse};
 use futures::future::join_all;
 use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
+use truelayer::model::AccountBalance;
 use uuid::Uuid;
 
-use crate::{app::component::MyHtml, truelayer::model::AccountBalance, AppContext, TlClient};
+use crate::{app::component::MyHtml, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
@@ -81,9 +82,9 @@ fn account_list(accounts: Vec<Account>) -> impl IntoView {
         </a>
     }).collect_view();
 
-    return view! {
+    view! {
         <ul class="list-group list-group-flush">
             { accounts_view }
         </ul>
-    };
+    }
 }

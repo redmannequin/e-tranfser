@@ -1,14 +1,12 @@
 mod api;
 mod app;
-mod db;
-mod root_span;
-mod truelayer;
+pub mod log;
 
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
 use anyhow::Context;
 use db::DbClient;
-use root_span::DomainRootSpanBuilder;
+use log::DomainRootSpanBuilder;
 use serde::Deserialize;
 use tracing_actix_web::TracingLogger;
 
@@ -49,16 +47,22 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .wrap(TracingLogger::<DomainRootSpanBuilder>::new())
             .service(web::resource("/health_check").route(web::get().to(HttpResponse::Ok)))
             .service(web::resource("/").to(app::home))
-            .service(web::resource("/payment").to(app::payment))
-            .service(web::resource("/payment_sent").to(app::payment_sent))
-            .service(web::resource("/deposit").to(app::deposit))
-            .service(web::resource("/deposit_select_account").to(app::deposit_select_account))
             .service(web::resource("/callback").to(app::tl_callback))
             .service(web::resource("/data_callback").to(app::tl_data_callback))
+            .service(web::resource("/deposit_select_account").to(app::deposit_select_account))
+            .service(web::resource("/deposit").to(app::deposit))
+            .service(web::resource("/payment_sent").to(app::payment_sent))
+            .service(web::resource("/payment").to(app::payment))
+            .service(web::resource("/register").to(app::register))
+            .service(
+                web::scope("/admin")
+                    .service(web::resource("/payment").to(app::admin::admin_payment_view)),
+            )
             .service(
                 web::scope("/api")
                     .service(api::create_payment::create_payment)
-                    .service(api::deposit_payment::deposit_payment),
+                    .service(api::deposit_payment::deposit_payment)
+                    .service(api::tl_webhooks::tl_webhook),
             )
             .default_service(web::to(app::not_found))
     })

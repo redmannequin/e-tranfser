@@ -1,5 +1,5 @@
 use actix_web::{web, HttpResponse};
-use leptos::{view, IntoView};
+use leptos::view;
 use serde::Deserialize;
 use uuid::Uuid;
 
