@@ -1,6 +1,6 @@
 use actix_web::{web, HttpResponse};
 use domain::Payment;
-use leptos::{component, view, IntoView};
+use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
 use uuid::Uuid;
 
@@ -41,8 +41,57 @@ pub async fn admin_payment_view(
 
 #[component]
 fn payment_view(payment: Payment) -> impl IntoView {
-    let payment_id = payment.payment_id.to_string();
-    let payment_state = payment.payment_state.as_str();
+    let feilds_and_values = [
+        ("payment_id", payment.payment_id.to_string()),
+        (
+            "inbound_created_at",
+            payment.payment_statuses.inbound_created_at.to_rfc3339(),
+        ),
+        (
+            "inbound_authorized_at",
+            payment
+                .payment_statuses
+                .inbound_authorized_at
+                .map(|s| s.to_rfc3339())
+                .unwrap_or_default(),
+        ),
+        (
+            "inbound_executed_at",
+            payment
+                .payment_statuses
+                .inbound_executed_at
+                .map(|s| s.to_rfc3339())
+                .unwrap_or_default(),
+        ),
+        (
+            "inbound_settled_at",
+            payment
+                .payment_statuses
+                .inbound_settled_at
+                .map(|s| s.to_rfc3339())
+                .unwrap_or_default(),
+        ),
+        (
+            "inbound_failed_at",
+            payment
+                .payment_statuses
+                .inbound_failed_at
+                .map(|s| s.to_rfc3339())
+                .unwrap_or_default(),
+        ),
+    ];
+
+    let feilds_and_values = feilds_and_values
+        .into_iter()
+        .map(|(field, value)| {
+            view! {
+                <tr>
+                    <th scope="row">{field}</th>
+                    <td>{value}</td>
+                </tr>
+            }
+        })
+        .collect_view();
 
     view! {
         <table class="table">
@@ -53,14 +102,7 @@ fn payment_view(payment: Payment) -> impl IntoView {
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <th scope="row">payment_id</th>
-                    <td>{payment_id}</td>
-                </tr>
-                <tr>
-                    <th scope="row">payment_state</th>
-                    <td>{payment_state}</td>
-                </tr>
+                { feilds_and_values }
             </tbody>
         </table>
     }

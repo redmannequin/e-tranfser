@@ -22,14 +22,17 @@ pub async fn tl_callback(
         .await;
 
     match payment {
-        Ok(Some((payment, _version))) if payment.payment_state >= PaymentState::InboundCreated => {
-            HttpResponse::SeeOther()
-                .insert_header((
-                    header::LOCATION,
-                    format!("/payment_sent?payment_id={}", query_params.payment_id),
-                ))
-                .finish()
-        }
+        Ok(Some((
+            Payment {
+                payment_statuses, ..
+            },
+            _version,
+        ))) if payment_statuses.state() >= PaymentState::InboundCreated => HttpResponse::SeeOther()
+            .insert_header((
+                header::LOCATION,
+                format!("/payment_sent?payment_id={}", query_params.payment_id),
+            ))
+            .finish(),
         _ => HttpResponse::SeeOther()
             .insert_header((header::LOCATION, "/error"))
             .finish(),

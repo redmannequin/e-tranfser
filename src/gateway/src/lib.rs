@@ -1,12 +1,12 @@
 mod api;
 mod app;
-mod root_span;
+pub mod log;
 
 use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
 use actix_web_opentelemetry::RequestTracing;
 use anyhow::Context;
 use db::DbClient;
-use root_span::DomainRootSpanBuilder;
+use log::DomainRootSpanBuilder;
 use serde::Deserialize;
 use tracing_actix_web::TracingLogger;
 

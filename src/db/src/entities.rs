@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio_postgres::types::Json;
 use uuid::Uuid;
@@ -30,29 +31,22 @@ pub enum PaymentData {
         amount: u32,
         security_question: String,
         security_answer: String,
-        payment_state: PaymentState,
+        payment_statuses: PaymentStatuses,
     },
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum PaymentState {
-    // inbound status
-    InboundCreated,
-    InboundAuthorizing,
-    InboundAuthorized,
-    InboundExecuted,
-    InboundSettled,
-    InboundFailed,
-    // refund status
-    RefundCreated,
-    RefundAuthorized,
-    RefundExecuted,
-    RefundFailed,
-    // outbound status
-    OutboundCreated,
-    OutboundAuthorized,
-    OutboundExecuted,
-    OutboundFaild,
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum PaymentStatuses {
+    V1(PaymentStatusesV1),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaymentStatusesV1 {
+    pub inbound_created_at: DateTime<Utc>,
+    pub inbound_authorized_at: Option<DateTime<Utc>>,
+    pub inbound_executed_at: Option<DateTime<Utc>>,
+    pub inbound_settled_at: Option<DateTime<Utc>>,
+    pub inbound_failed_at: Option<DateTime<Utc>>,
 }
 
 ////////////////////////////////////////////////////////////////////////////////

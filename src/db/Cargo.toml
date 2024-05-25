@@ -9,6 +9,7 @@ edition = "2021"
 
 # External
 anyhow = { workspace = true }
+chrono = { workspace = true, default-features = false, features = ["serde"] }
 serde = { workspace = true }
 thiserror = { workspace = true }
 tokio = { workspace = true }

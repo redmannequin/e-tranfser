@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use anyhow::Context;
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -32,14 +33,48 @@ pub struct Payment {
     pub amount: u32,
     pub security_question: String,
     pub security_answer: String,
-    pub payment_state: PaymentState,
+    pub payment_statuses: PaymentStatuses,
+}
+
+impl Payment {
+    pub fn state(&self) -> PaymentState {
+        self.payment_statuses.state()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct PaymentStatuses {
+    pub inbound_created_at: DateTime<Utc>,
+    pub inbound_authorized_at: Option<DateTime<Utc>>,
+    pub inbound_executed_at: Option<DateTime<Utc>>,
+    pub inbound_settled_at: Option<DateTime<Utc>>,
+    pub inbound_failed_at: Option<DateTime<Utc>>,
+}
+
+impl PaymentStatuses {
+    pub fn state(&self) -> PaymentState {
+        self.inbound_failed_at
+            .map(|_| PaymentState::InboundFailed)
+            .or_else(|| {
+                self.inbound_settled_at
+                    .map(|_| PaymentState::InboundSettled)
+            })
+            .or_else(|| {
+                self.inbound_executed_at
+                    .map(|_| PaymentState::InboundExecuted)
+            })
+            .or_else(|| {
+                self.inbound_authorized_at
+                    .map(|_| PaymentState::InboundAuthorized)
+            })
+            .unwrap_or(PaymentState::InboundCreated)
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum PaymentState {
     // inbound status
     InboundCreated,
-    InboundAuthorizing,
     InboundAuthorized,
     InboundExecuted,
     InboundSettled,
@@ -60,7 +95,6 @@ impl PaymentState {
     pub const fn as_str(self) -> &'static str {
         match self {
             PaymentState::InboundCreated => "inbound_created",
-            PaymentState::InboundAuthorizing => "inbound_authorizing",
             PaymentState::InboundAuthorized => "inbound_authorized",
             PaymentState::InboundExecuted => "inbound_executed",
             PaymentState::InboundSettled => "inbound_settled",
@@ -100,7 +134,7 @@ impl From<db::entities::Payment> for Payment {
                 amount,
                 security_question,
                 security_answer,
-                payment_state,
+                payment_statuses,
             } => Payment {
                 payment_id: PaymentId::from_uuid(value.payment_id),
                 payer_full_name,
@@ -110,7 +144,7 @@ impl From<db::entities::Payment> for Payment {
                 amount,
                 security_question,
                 security_answer,
-                payment_state: PaymentState::from_entity(payment_state),
+                payment_statuses: PaymentStatuses::from_entity(payment_statuses),
             },
         }
     }
@@ -128,49 +162,33 @@ impl From<Payment> for db::entities::Payment {
                 amount: value.amount,
                 security_question: value.security_question,
                 security_answer: value.security_answer,
-                payment_state: value.payment_state.into_entity(),
+                payment_statuses: value.payment_statuses.into_entity(),
             }),
         }
     }
 }
 
-impl PaymentState {
-    const fn from_entity(value: db::entities::PaymentState) -> Self {
+impl PaymentStatuses {
+    const fn from_entity(value: db::entities::PaymentStatuses) -> Self {
         match value {
-            db::entities::PaymentState::InboundCreated => PaymentState::InboundCreated,
-            db::entities::PaymentState::InboundAuthorizing => PaymentState::InboundAuthorizing,
-            db::entities::PaymentState::InboundAuthorized => PaymentState::InboundAuthorized,
-            db::entities::PaymentState::InboundExecuted => PaymentState::InboundExecuted,
-            db::entities::PaymentState::InboundSettled => PaymentState::InboundSettled,
-            db::entities::PaymentState::InboundFailed => PaymentState::InboundFailed,
-            db::entities::PaymentState::RefundCreated => PaymentState::RefundCreated,
-            db::entities::PaymentState::RefundAuthorized => PaymentState::RefundAuthorized,
-            db::entities::PaymentState::RefundExecuted => PaymentState::RefundExecuted,
-            db::entities::PaymentState::RefundFailed => PaymentState::RefundFailed,
-            db::entities::PaymentState::OutboundCreated => PaymentState::OutboundCreated,
-            db::entities::PaymentState::OutboundAuthorized => PaymentState::OutboundAuthorized,
-            db::entities::PaymentState::OutboundExecuted => PaymentState::OutboundExecuted,
-            db::entities::PaymentState::OutboundFaild => PaymentState::OutboundFaild,
+            db::entities::PaymentStatuses::V1(payment_status) => Self {
+                inbound_created_at: payment_status.inbound_created_at,
+                inbound_authorized_at: payment_status.inbound_authorized_at,
+                inbound_executed_at: payment_status.inbound_executed_at,
+                inbound_settled_at: payment_status.inbound_settled_at,
+                inbound_failed_at: payment_status.inbound_failed_at,
+            },
         }
     }
 
-    const fn into_entity(self) -> db::entities::PaymentState {
-        match self {
-            PaymentState::InboundCreated => db::entities::PaymentState::InboundCreated,
-            PaymentState::InboundAuthorizing => db::entities::PaymentState::InboundAuthorizing,
-            PaymentState::InboundAuthorized => db::entities::PaymentState::InboundAuthorized,
-            PaymentState::InboundExecuted => db::entities::PaymentState::InboundExecuted,
-            PaymentState::InboundSettled => db::entities::PaymentState::InboundSettled,
-            PaymentState::InboundFailed => db::entities::PaymentState::InboundFailed,
-            PaymentState::RefundCreated => db::entities::PaymentState::RefundCreated,
-            PaymentState::RefundAuthorized => db::entities::PaymentState::RefundAuthorized,
-            PaymentState::RefundExecuted => db::entities::PaymentState::RefundExecuted,
-            PaymentState::RefundFailed => db::entities::PaymentState::RefundFailed,
-            PaymentState::OutboundCreated => db::entities::PaymentState::OutboundCreated,
-            PaymentState::OutboundAuthorized => db::entities::PaymentState::OutboundAuthorized,
-            PaymentState::OutboundExecuted => db::entities::PaymentState::OutboundExecuted,
-            PaymentState::OutboundFaild => db::entities::PaymentState::OutboundFaild,
-        }
+    const fn into_entity(self) -> db::entities::PaymentStatuses {
+        db::entities::PaymentStatuses::V1(db::entities::PaymentStatusesV1 {
+            inbound_created_at: self.inbound_created_at,
+            inbound_authorized_at: self.inbound_authorized_at,
+            inbound_executed_at: self.inbound_executed_at,
+            inbound_settled_at: self.inbound_settled_at,
+            inbound_failed_at: self.inbound_failed_at,
+        })
     }
 }
 

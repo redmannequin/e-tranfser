@@ -1,11 +1,5 @@
 [workspace]
-members = [
-    "src/db",
-    "src/domain",
-    "src/gateway",
-    "src/integration-tests",
-    "src/truelayer",
-]
+members = ["src/db", "src/domain", "src/gateway", "src/truelayer"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -20,6 +14,7 @@ actix-web = "4"
 actix-web-opentelemetry = "0.17"
 anyhow = "1"
 argon2 = "0.5"
+chrono = "0.4"
 config = "0.14"
 futures = "0.3"
 leptos = "0.6"
