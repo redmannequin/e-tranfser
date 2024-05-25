@@ -84,7 +84,10 @@ impl DbClient {
         }
     }
 
-    pub async fn get_payment<T>(&self, payment_id: Uuid) -> Result<Option<(T, u32)>, DbError>
+    pub async fn get_payment<T>(
+        &self,
+        payment_id: impl AsRef<Uuid>,
+    ) -> Result<Option<(T, u32)>, DbError>
     where
         T: From<Payment>,
     {
@@ -99,7 +102,7 @@ impl DbClient {
                 FROM payments
                 WHERE payment_id = $1
                 "#,
-                &[&payment_id],
+                &[payment_id.as_ref()],
             )
             .await?;
 

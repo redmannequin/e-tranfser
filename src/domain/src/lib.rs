@@ -10,14 +10,16 @@ use uuid::Uuid;
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct PaymentId {
-    inner: Uuid,
-}
+pub struct PaymentId(Uuid);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-pub struct UserId {
-    inner: Uuid,
-}
+pub struct PayoutId(Uuid);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct RefundId(Uuid);
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+pub struct UserId(Uuid);
 
 ////////////////////////////////////////////////////////////////////////////////
 // Models
@@ -153,7 +155,7 @@ impl From<db::entities::Payment> for Payment {
 impl From<Payment> for db::entities::Payment {
     fn from(value: Payment) -> Self {
         db::entities::Payment {
-            payment_id: value.payment_id.inner,
+            payment_id: value.payment_id.0,
             payment_data: db::Json(db::entities::PaymentData::V1 {
                 payer_full_name: value.payer_full_name,
                 payer_email: value.payer_email,
@@ -211,7 +213,7 @@ impl From<db::entities::User> for User {
 impl From<User> for db::entities::User {
     fn from(value: User) -> Self {
         db::entities::User {
-            user_id: value.user_id.inner,
+            user_id: value.user_id.0,
             email: value.email,
             user_data: db::Json(db::entities::UserData::V1 {
                 first_name: value.first_name,
@@ -230,9 +232,7 @@ macro_rules! impl_uuid_ty {
         impl $T {
             #[allow(clippy::new_without_default)]
             pub fn new() -> Self {
-                Self {
-                    inner: Uuid::new_v4(),
-                }
+                Self(Uuid::new_v4())
             }
 
             pub fn parse_str(uuid: &str) -> anyhow::Result<Self> {
@@ -242,37 +242,45 @@ macro_rules! impl_uuid_ty {
             }
 
             pub const fn from_uuid(uuid: Uuid) -> Self {
-                Self { inner: uuid }
+                Self(uuid)
             }
 
             pub const fn into_uuid(self) -> Uuid {
-                self.inner
+                self.0
             }
 
             pub const fn as_uuid(&self) -> &Uuid {
-                &self.inner
+                &self.0
             }
         }
 
         impl Display for $T {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                self.inner.fmt(f)
+                self.0.fmt(f)
             }
         }
 
         impl From<Uuid> for $T {
             fn from(value: Uuid) -> Self {
-                Self { inner: value }
+                Self(value)
             }
         }
 
         impl From<$T> for Uuid {
             fn from(value: $T) -> Self {
-                value.inner
+                value.0
+            }
+        }
+
+        impl AsRef<Uuid> for $T {
+            fn as_ref(&self) -> &Uuid {
+                &self.0
             }
         }
     };
 }
 
 impl_uuid_ty!(PaymentId);
+impl_uuid_ty!(PayoutId);
+impl_uuid_ty!(RefundId);
 impl_uuid_ty!(UserId);

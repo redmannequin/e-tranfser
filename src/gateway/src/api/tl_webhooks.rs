@@ -1,7 +1,7 @@
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::{ensure, Context};
-use chrono::DateTime;
-use domain::{Payment, PaymentState};
+use chrono::{DateTime, Utc};
+use domain::{Payment, PaymentId, PaymentState, PayoutId, RefundId};
 use serde::Deserialize;
 use tracing::warn;
 use truelayer_signing::Method;
@@ -17,22 +17,22 @@ pub enum TlWebhook {
     PaymentAuthorized {
         event_id: Uuid,
         event_version: u32,
-        payment_id: Uuid,
-        authorized_at: String,
+        payment_id: PaymentId,
+        authorized_at: DateTime<Utc>,
         payment_source: Option<PaymentSource>,
     },
     PaymentExecuted {
         event_id: Uuid,
         event_version: u32,
-        payment_id: Uuid,
-        executed_at: String,
+        payment_id: PaymentId,
+        executed_at: DateTime<Utc>,
         payment_source: Option<PaymentSource>,
     },
     PaymentFailed {
         event_id: Uuid,
         event_version: u32,
-        payment_id: Uuid,
-        failed_at: String,
+        payment_id: PaymentId,
+        failed_at: DateTime<Utc>,
         failed_stage: String,
         failure_reason: String,
         payment_source: Option<PaymentSource>,
@@ -40,8 +40,8 @@ pub enum TlWebhook {
     PaymentSettled {
         event_id: Uuid,
         event_version: u32,
-        payment_id: Uuid,
-        settled_at: String,
+        payment_id: PaymentId,
+        settled_at: DateTime<Utc>,
         payment_source: Option<PaymentSource>,
         user_id: String,
     },
@@ -51,9 +51,35 @@ pub enum TlWebhook {
         transaction_id: Uuid,
         currency: String,
         amount_in_minor: String,
-        settled_at: String,
+        settled_at: DateTime<Utc>,
         merchant_account_id: String,
         remitter: Remitter,
+    },
+    PayoutExecuted {
+        event_id: Uuid,
+        event_version: u32,
+        payout_id: PayoutId,
+        executed_at: DateTime<Utc>,
+    },
+    PayoutFailed {
+        event_id: Uuid,
+        event_version: u32,
+        payout_id: PayoutId,
+        failed_at: DateTime<Utc>,
+    },
+    RefundExecuted {
+        event_id: Uuid,
+        event_version: u32,
+        refund_id: RefundId,
+        payment_id: Uuid,
+        executed_at: DateTime<Utc>,
+    },
+    RefundFailed {
+        event_id: Uuid,
+        event_version: u32,
+        refund_id: RefundId,
+        payment_id: Uuid,
+        failed_at: DateTime<Utc>,
     },
 }
 
@@ -109,10 +135,6 @@ pub async fn tl_webhook(
                 .await?
                 .ok_or(PublicError::Invalid(String::from("test")))?;
 
-            let authorized_at = DateTime::parse_from_rfc3339(&authorized_at)
-                .unwrap()
-                .to_utc();
-
             payment.payment_statuses.inbound_authorized_at = Some(authorized_at);
             app.db_client.upsert_payment(payment, version + 1).await?;
         }
@@ -130,7 +152,6 @@ pub async fn tl_webhook(
                 .await?
                 .ok_or(PublicError::Invalid(String::from("test")))?;
 
-            let executed_at = DateTime::parse_from_rfc3339(&executed_at).unwrap().to_utc();
             payment.payment_statuses.inbound_executed_at = Some(executed_at);
             app.db_client.upsert_payment(payment, version + 1).await?;
         }
@@ -148,7 +169,6 @@ pub async fn tl_webhook(
                 .await?
                 .ok_or(PublicError::Invalid(String::from("test")))?;
 
-            let settled_at = DateTime::parse_from_rfc3339(&settled_at).unwrap().to_utc();
             payment.payment_statuses.inbound_settled_at = Some(settled_at);
             app.db_client.upsert_payment(payment, version + 1).await?;
         }
@@ -166,7 +186,6 @@ pub async fn tl_webhook(
                 .await?
                 .ok_or(PublicError::Invalid(String::from("test")))?;
 
-            let failed_at = DateTime::parse_from_rfc3339(&failed_at).unwrap().to_utc();
             payment.payment_statuses.inbound_failed_at = Some(failed_at);
             app.db_client.upsert_payment(payment, version + 1).await?;
         }
