@@ -1,3 +1,4 @@
+pub mod admin;
 mod component;
 mod deposit;
 mod depsoit_select_account;

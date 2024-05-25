@@ -55,6 +55,10 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .service(web::resource("/payment").to(app::payment))
             .service(web::resource("/register").to(app::register))
             .service(
+                web::scope("/admin")
+                    .service(web::resource("/payment").to(app::admin::admin_payment_view)),
+            )
+            .service(
                 web::scope("/api")
                     .service(api::create_payment::create_payment)
                     .service(api::deposit_payment::deposit_payment)

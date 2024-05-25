@@ -56,6 +56,27 @@ pub enum PaymentState {
     OutboundFaild,
 }
 
+impl PaymentState {
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            PaymentState::InboundCreated => "inbound_created",
+            PaymentState::InboundAuthorizing => "inbound_authorizing",
+            PaymentState::InboundAuthorized => "inbound_authorized",
+            PaymentState::InboundExecuted => "inbound_executed",
+            PaymentState::InboundSettled => "inbound_settled",
+            PaymentState::InboundFailed => "inbound_failed",
+            PaymentState::RefundCreated => "refund_created",
+            PaymentState::RefundAuthorized => "refund_authorized",
+            PaymentState::RefundExecuted => "refund_executed",
+            PaymentState::RefundFailed => "refund_failed",
+            PaymentState::OutboundCreated => "outbound_created",
+            PaymentState::OutboundAuthorized => "outbound_authorized",
+            PaymentState::OutboundExecuted => "outbound_executed",
+            PaymentState::OutboundFaild => "outbound_faild",
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct User {
     pub user_id: UserId,
