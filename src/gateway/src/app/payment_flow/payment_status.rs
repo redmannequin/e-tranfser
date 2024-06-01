@@ -1,4 +1,4 @@
-use actix_web::{web, HttpResponse};
+use actix_web::{http::StatusCode, web, HttpResponse};
 use domain::{Payment, PaymentState};
 use leptos::view;
 use serde::Deserialize;
@@ -79,7 +79,7 @@ pub async fn payment_status_update(
     let html = leptos::ssr::render_to_string(move || view! {<p>{status}</p>});
     let mut res = HttpResponse::Ok();
 
-    // stop polling when payment reaches the states below via htmx header
+    // stop polling when payment reaches the states below
     if matches!(
         payment.state(),
         PaymentState::InboundFailed
@@ -89,7 +89,7 @@ pub async fn payment_status_update(
             | PaymentState::OutboundExecuted
             | PaymentState::InboundSettled
     ) {
-        res.append_header(("HX-Trigger", "done"));
+        res.status(StatusCode::from_u16(286).unwrap());
     }
 
     Ok(res
