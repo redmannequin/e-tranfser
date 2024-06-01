@@ -73,7 +73,7 @@ impl PaymentStatuses {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Deserialize, Serialize)]
 pub enum PaymentState {
     // inbound status
     InboundCreated,
@@ -90,7 +90,7 @@ pub enum PaymentState {
     OutboundCreated,
     OutboundAuthorized,
     OutboundExecuted,
-    OutboundFaild,
+    OutboundFailed,
 }
 
 impl PaymentState {
@@ -108,7 +108,7 @@ impl PaymentState {
             PaymentState::OutboundCreated => "outbound_created",
             PaymentState::OutboundAuthorized => "outbound_authorized",
             PaymentState::OutboundExecuted => "outbound_executed",
-            PaymentState::OutboundFaild => "outbound_faild",
+            PaymentState::OutboundFailed => "outbound_failed",
         }
     }
 }

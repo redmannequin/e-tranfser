@@ -36,7 +36,7 @@ pub async fn admin_payment_view(
 
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(html.as_str().to_string())
+        .body(html.to_string())
 }
 
 #[component]

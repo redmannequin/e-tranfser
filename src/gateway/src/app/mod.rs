@@ -1,21 +1,13 @@
-pub mod admin;
 mod component;
-mod deposit;
-mod depsoit_select_account;
 mod home;
 mod not_found;
-mod payment;
-mod payment_sent;
-mod regeister;
-mod tl_callback;
 mod tl_data_callback;
 
-pub use deposit::deposit;
-pub use depsoit_select_account::deposit_select_account;
+pub mod admin;
+pub mod deposit_flow;
+pub mod payment_flow;
+pub mod registration_flow;
+
 pub use home::home;
 pub use not_found::not_found;
-pub use payment::payment;
-pub use payment_sent::payment_sent;
-pub use regeister::register;
-pub use tl_callback::tl_callback;
 pub use tl_data_callback::tl_data_callback;

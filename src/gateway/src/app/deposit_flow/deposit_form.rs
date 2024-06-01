@@ -14,7 +14,7 @@ pub struct QueryParams {
     payment_id: Uuid,
 }
 
-pub async fn deposit(
+pub async fn deposit_form(
     app: web::Data<AppContext>,
     query_params: web::Query<QueryParams>,
 ) -> HttpResponse {
@@ -36,8 +36,7 @@ pub async fn deposit(
         view! {
             <MyHtml>
                 <div class="container-sm form-signin w-100 m-auto text-center" >
-
-                    <form action="api/deposit_payment" method="post" >
+                    <form action="../api/deposit_payment" method="post" >
 
                         <h1 class="text-light mb-3 fw-normal">Deposit Payment</h1>
 
@@ -49,7 +48,7 @@ pub async fn deposit(
                                 id="from"
                                 value={from}
                             />
-                            <label for="from" >From</label>
+                            <label for="from">From</label>
                         </div>
 
                         <div class="form-floating mb-3" >
@@ -60,7 +59,7 @@ pub async fn deposit(
                                 id="amount_test"
                                 value={amount}
                             />
-                            <label for="amount_test" >Amount</label>
+                            <label for="amount_test">Amount</label>
                         </div>
 
                         <div class="form-floating mb-3" >
@@ -71,10 +70,10 @@ pub async fn deposit(
                                 id="security_question"
                                 value={security_question}
                             />
-                            <label for="security_question" >Security Question</label>
+                            <label for="security_question">Security Question</label>
                         </div>
 
-                        <MyInput input_type="text" name="security_answer" label="Security Answer" />
+                        <MyInput input_type="text" name="security_answer" label="Security Answer"/>
 
                         <input
                             type="hidden"
@@ -82,13 +81,12 @@ pub async fn deposit(
                             value={payment_id}
                         />
 
-                        <div class="input-group mb-3" >
+                        <div class="input-group mb-3">
                             <input
                                 type="submit"
                                 class="form-control btn btn-success"
                                 value="DEPOSIT"
                             />
-
                         </div>
 
                     </form>
@@ -100,5 +98,5 @@ pub async fn deposit(
 
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(html.as_str().to_string())
+        .body(html.to_string())
 }

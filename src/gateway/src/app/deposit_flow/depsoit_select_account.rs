@@ -9,6 +9,7 @@ use crate::{app::component::MyHtml, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
+    #[allow(unused)]
     payment_id: Uuid,
     code: String,
 }
@@ -61,7 +62,7 @@ pub async fn deposit_select_account(
 
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
-        .body(html.as_str().to_string())
+        .body(html.to_string())
 }
 
 struct Account {

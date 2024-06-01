@@ -16,5 +16,5 @@ pub async fn not_found(_req: HttpRequest) -> HttpResponse {
 
     HttpResponse::NotFound()
         .content_type("text/html; charset=utf-8")
-        .body(html.as_str().to_string())
+        .body(html.to_string())
 }

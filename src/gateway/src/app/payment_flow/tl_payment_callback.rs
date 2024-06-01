@@ -1,36 +1,34 @@
 use actix_web::{http::header, web, HttpResponse};
-use domain::{Payment, PaymentState};
+use domain::Payment;
 use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::AppContext;
+
+use super::PAYMENT_STATUS_PAGE;
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
     payment_id: Uuid,
 }
 
-pub async fn tl_callback(
+pub async fn tl_payment_callback(
     app: web::Data<AppContext>,
     query_params: web::Query<QueryParams>,
 ) -> HttpResponse {
-    tracing::info!("payment sent: {}", query_params.payment_id);
-
     let payment = app
         .db_client
         .get_payment::<Payment>(query_params.payment_id)
         .await;
 
     match payment {
-        Ok(Some((
-            Payment {
-                payment_statuses, ..
-            },
-            _version,
-        ))) if payment_statuses.state() >= PaymentState::InboundCreated => HttpResponse::SeeOther()
+        Ok(Some(_)) => HttpResponse::SeeOther()
             .insert_header((
                 header::LOCATION,
-                format!("/payment_sent?payment_id={}", query_params.payment_id),
+                format!(
+                    "{}?payment_id={}",
+                    PAYMENT_STATUS_PAGE, query_params.payment_id
+                ),
             ))
             .finish(),
         _ => HttpResponse::SeeOther()
