@@ -13,6 +13,7 @@ pub fn my_input(
                 id={name}
                 name={name}
                 class="form-control"
+                data-1p-ignore
             />
             <label for={name}>{label}</label>
         </div>
