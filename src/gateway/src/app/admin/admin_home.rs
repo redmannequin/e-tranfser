@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
 use leptos::view;
 
 use crate::app::component::{MyHtml, MyInput};

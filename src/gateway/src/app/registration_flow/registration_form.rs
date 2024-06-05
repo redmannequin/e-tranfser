@@ -1,5 +1,4 @@
 use actix_web::{web, HttpResponse};
-use db::entities::User;
 use domain::UserState;
 use leptos::{component, view, IntoView};
 use serde::Deserialize;

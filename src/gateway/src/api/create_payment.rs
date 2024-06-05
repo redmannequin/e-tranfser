@@ -5,9 +5,8 @@ use argon2::{
 };
 use chrono::Utc;
 use domain::{Payment, PaymentId, PaymentState, PaymentStatuses};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tracing::instrument;
-use uuid::Uuid;
 
 use crate::{log, AppContext};
 
@@ -22,13 +21,6 @@ pub struct FormData {
     amount: u32,
     security_question: String,
     security_answer: String,
-}
-
-#[derive(Debug, Serialize)]
-struct Response {
-    payment_id: Uuid,
-    resource_token: String,
-    return_uri: String,
 }
 
 #[post("/create_payment")]
