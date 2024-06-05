@@ -22,7 +22,7 @@ pub struct RefundId(Uuid);
 pub struct UserId(Uuid);
 
 ////////////////////////////////////////////////////////////////////////////////
-// Models
+// Payment Models
 ////////////////////////////////////////////////////////////////////////////////
 
 #[derive(Debug, Clone)]
@@ -113,12 +113,78 @@ impl PaymentState {
     }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// User Models
+////////////////////////////////////////////////////////////////////////////////
+
 #[derive(Debug, Clone)]
-pub struct User {
-    pub user_id: UserId,
-    pub email: String,
-    pub first_name: String,
-    pub last_name: String,
+pub enum User {
+    Registering {
+        user_id: UserId,
+        email: String,
+        first_name: String,
+        last_name: String,
+        code: String,
+        timestamp: DateTime<Utc>,
+    },
+    Registered {
+        user_id: UserId,
+        email: String,
+        first_name: String,
+        last_name: String,
+    },
+}
+
+impl User {
+    pub fn state(&self) -> UserState {
+        match self {
+            User::Registered { .. } => UserState::Registered,
+            User::Registering { .. } => UserState::Registering,
+        }
+    }
+
+    pub fn user_id(&self) -> UserId {
+        match self {
+            User::Registered { user_id, .. } => *user_id,
+            User::Registering { user_id, .. } => *user_id,
+        }
+    }
+
+    pub fn email(&self) -> &str {
+        match self {
+            User::Registered { email, .. } => email,
+            User::Registering { email, .. } => email,
+        }
+    }
+
+    pub fn first_name(&self) -> &str {
+        match self {
+            User::Registered { first_name, .. } => first_name,
+            User::Registering { first_name, .. } => first_name,
+        }
+    }
+
+    pub fn last_name(&self) -> &str {
+        match self {
+            User::Registered { last_name, .. } => last_name,
+            User::Registering { last_name, .. } => last_name,
+        }
+    }
+
+    pub fn registration_code(&self) -> Option<(&str, &DateTime<Utc>)> {
+        match self {
+            User::Registered { .. } => None,
+            User::Registering {
+                timestamp, code, ..
+            } => Some((code, timestamp)),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum UserState {
+    Registering,
+    Registered,
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -184,7 +250,7 @@ impl PaymentStatuses {
     }
 
     const fn into_entity(self) -> db::entities::PaymentStatuses {
-        db::entities::PaymentStatuses::V1(db::entities::PaymentStatusesV1 {
+        db::entities::PaymentStatuses::V1(db::entities::v1::PaymentStatusesV1 {
             inbound_created_at: self.inbound_created_at,
             inbound_authorized_at: self.inbound_authorized_at,
             inbound_executed_at: self.inbound_executed_at,
@@ -197,14 +263,27 @@ impl PaymentStatuses {
 impl From<db::entities::User> for User {
     fn from(value: db::entities::User) -> Self {
         match value.user_data.0 {
-            db::entities::UserData::V1 {
+            db::entities::UserData::V1(db::entities::v1::UserDataV1::Registered {
                 first_name,
                 last_name,
-            } => User {
+            }) => User::Registered {
                 user_id: UserId::from(value.user_id),
                 email: value.email,
                 first_name,
                 last_name,
+            },
+            db::entities::UserData::V1(db::entities::v1::UserDataV1::Registering {
+                first_name,
+                last_name,
+                code,
+                timestamp,
+            }) => User::Registering {
+                user_id: UserId::from(value.user_id),
+                email: value.email,
+                first_name,
+                last_name,
+                code,
+                timestamp,
             },
         }
     }
@@ -212,13 +291,41 @@ impl From<db::entities::User> for User {
 
 impl From<User> for db::entities::User {
     fn from(value: User) -> Self {
-        db::entities::User {
-            user_id: value.user_id.0,
-            email: value.email,
-            user_data: db::Json(db::entities::UserData::V1 {
-                first_name: value.first_name,
-                last_name: value.last_name,
-            }),
+        match value {
+            User::Registering {
+                user_id,
+                email,
+                first_name,
+                last_name,
+                code,
+                timestamp,
+            } => db::entities::User {
+                user_id: user_id.into_uuid(),
+                email,
+                user_data: db::Json(db::entities::UserData::V1(
+                    db::entities::v1::UserDataV1::Registering {
+                        first_name,
+                        last_name,
+                        code,
+                        timestamp,
+                    },
+                )),
+            },
+            User::Registered {
+                user_id,
+                email,
+                first_name,
+                last_name,
+            } => db::entities::User {
+                user_id: user_id.into_uuid(),
+                email,
+                user_data: db::Json(db::entities::UserData::V1(
+                    db::entities::v1::UserDataV1::Registered {
+                        first_name,
+                        last_name,
+                    },
+                )),
+            },
         }
     }
 }

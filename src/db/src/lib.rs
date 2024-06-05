@@ -3,7 +3,7 @@ pub mod error;
 
 use anyhow::Context;
 use serde::Deserialize;
-use tokio_postgres::{Config, NoTls};
+use tokio_postgres::{Config, NoTls, Row};
 use uuid::Uuid;
 
 use self::{
@@ -131,19 +131,20 @@ impl DbClient {
                 r#"
                 INSERT INTO users (
                     user_id,
+                    email,
                     data_version,
                     created_at,
                     updated_at,
                     user_data
                 )
-                VALUES($1, $2, NOW(), NOW(), $3)
-                ON CONFLICT (payment_id) DO UPDATE SET
-                    data_version = $2,
-                    user_data = $3,
+                VALUES($1, $2, $3, NOW(), NOW(), $4)
+                ON CONFLICT (user_id) DO UPDATE SET
+                    data_version = $3,
+                    user_data = $4,
                     updated_at = NOW()
-                WHERE payments.data_version = $2 - 1
+                WHERE users.data_version = $3 - 1
                 "#,
-                &[&user.user_id, &version, &user.user_data],
+                &[&user.user_id, &user.email, &version, &user.user_data],
             )
             .await?;
 
@@ -167,7 +168,7 @@ impl DbClient {
                 r#"
                 SELECT
                     user_id,
-                    eamil,
+                    email,
                     data_version,
                     user_data
                 FROM users
@@ -177,17 +178,68 @@ impl DbClient {
             )
             .await?;
 
-        if let Some(row) = row {
-            let user = User {
-                user_id: row.try_get(0)?,
-                email: row.try_get(1)?,
-                user_data: row.try_get(2)?,
-            };
-            let version: i32 = row.try_get(1)?;
-
-            Ok(Some((T::from(user), version as _)))
-        } else {
-            Ok(None)
-        }
+        row.map(user_from_row).transpose()
     }
+
+    pub async fn get_user_by_email<T>(&self, email: &str) -> Result<Option<(T, u32)>, DbError>
+    where
+        T: From<User>,
+    {
+        let row = self
+            .inner
+            .query_opt(
+                r#"
+                SELECT
+                    user_id,
+                    email,
+                    data_version,
+                    user_data
+                FROM users
+                WHERE email = $1
+                "#,
+                &[&email],
+            )
+            .await?;
+
+        row.map(user_from_row).transpose()
+    }
+
+    pub async fn get_users<T>(&self, limit: i64, offset: i64) -> Result<Vec<(T, u32)>, DbError>
+    where
+        T: From<User>,
+    {
+        let rows = self
+            .inner
+            .query(
+                r#"
+                SELECT
+                    user_id,
+                    email,
+                    data_version,
+                    user_data
+                FROM users
+                LIMIT $1 
+                OFFSET $2
+                "#,
+                &[&limit, &offset],
+            )
+            .await?;
+
+        rows.into_iter()
+            .map(user_from_row)
+            .collect::<Result<_, _>>()
+    }
+}
+
+fn user_from_row<T>(row: Row) -> Result<(T, u32), DbError>
+where
+    T: From<User>,
+{
+    let user = User {
+        user_id: row.try_get(0)?,
+        email: row.try_get(1)?,
+        user_data: row.try_get(3)?,
+    };
+    let version: i32 = row.try_get(2)?;
+    Ok((T::from(user), version as _))
 }

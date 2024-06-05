@@ -18,13 +18,17 @@ anyhow = { workspace = true }
 argon2 = { workspace = true }
 chrono = { workspace = true, default-features = false }
 config = { workspace = true }
+email_address = { workspace = true }
 futures = { workspace = true }
+futures-util = { workspace = true }
 leptos = { workspace = true }
+lettre = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry_sdk = { workspace = true, features = ["rt-tokio"] }
 opentelemetry-otlp = { workspace = true, features = ["tonic"] }
 opentelemetry-semantic-conventions = { workspace = true }
 opentelemetry-stdout = { workspace = true, features = ["trace"] }
+rand = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

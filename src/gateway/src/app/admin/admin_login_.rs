@@ -18,7 +18,7 @@ pub async fn admin_login_form() -> HttpResponse {
                 <div class="container-sm form-signin w-100 m-auto text-center" >
                     <form action="/admin/login" method="post" >
                         <h1 class="text-light mb-3 fw-normal">Admin Login</h1>
-                        <MyInput input_type="password" name="admin_password" label="Admin Password"/>
+                        <MyInput input_type="password" name="admin_password" label="Admin Password" required=true/>
                     </form>
                 </div>
             </MyHtml>

@@ -1,7 +1,10 @@
-use chrono::{DateTime, Utc};
+pub mod v1;
+
 use serde::{Deserialize, Serialize};
 use tokio_postgres::types::Json;
 use uuid::Uuid;
+
+use crate::entities::v1::{PaymentStatusesV1, UserDataV1};
 
 ////////////////////////////////////////////////////////////////////////////////
 // Payment
@@ -40,15 +43,6 @@ pub enum PaymentStatuses {
     V1(PaymentStatusesV1),
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PaymentStatusesV1 {
-    pub inbound_created_at: DateTime<Utc>,
-    pub inbound_authorized_at: Option<DateTime<Utc>>,
-    pub inbound_executed_at: Option<DateTime<Utc>>,
-    pub inbound_settled_at: Option<DateTime<Utc>>,
-    pub inbound_failed_at: Option<DateTime<Utc>>,
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // User
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,8 +57,5 @@ pub struct User {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "version")]
 pub enum UserData {
-    V1 {
-        first_name: String,
-        last_name: String,
-    },
+    V1(UserDataV1),
 }

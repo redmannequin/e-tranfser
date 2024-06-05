@@ -5,6 +5,7 @@ pub fn my_input(
     input_type: &'static str,
     name: &'static str,
     label: &'static str,
+    required: bool,
 ) -> impl IntoView {
     view! {
         <div class="form-floating mb-3" >
@@ -14,6 +15,7 @@ pub fn my_input(
                 name={name}
                 class="form-control"
                 data-1p-ignore
+                required={required}
             />
             <label for={name}>{label}</label>
         </div>

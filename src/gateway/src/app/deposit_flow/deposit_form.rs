@@ -73,7 +73,7 @@ pub async fn deposit_form(
                             <label for="security_question">Security Question</label>
                         </div>
 
-                        <MyInput input_type="text" name="security_answer" label="Security Answer"/>
+                        <MyInput input_type="text" name="security_answer" label="Security Answer" required=true/>
 
                         <input
                             type="hidden"
