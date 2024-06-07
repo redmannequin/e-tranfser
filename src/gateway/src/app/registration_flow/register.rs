@@ -1,16 +1,11 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{http::header, web, HttpResponse, Responder};
 use chrono::Utc;
 use domain::{User, UserId};
-use leptos::view;
 use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use tracing::instrument;
 
-use crate::{
-    api::PublicError,
-    app::component::{MyHtml, MyInput},
-    AppContext,
-};
+use crate::{api::PublicError, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct FormData {
@@ -32,8 +27,23 @@ async fn execute(
     request: FormData,
 ) -> Result<impl Responder, PublicError> {
     let code = Alphanumeric.sample_string(&mut rand::thread_rng(), 8);
-    app.db_client
-        .upsert_user(
+
+    let (user, user_version) = match app.db_client.get_user_by_email(&request.email).await? {
+        Some((User::Registered { .. }, _)) => {
+            return Err(PublicError::InternalServerError);
+        }
+        Some((User::Registering { user_id, email, .. }, v)) => (
+            User::Registering {
+                user_id,
+                email,
+                first_name: request.first_name,
+                last_name: request.last_name,
+                code,
+                timestamp: Utc::now(),
+            },
+            v + 1,
+        ),
+        None => (
             User::Registering {
                 user_id: UserId::new(),
                 email: request.email.clone(),
@@ -43,43 +53,13 @@ async fn execute(
                 timestamp: Utc::now(),
             },
             0,
-        )
-        .await?;
+        ),
+    };
 
-    let html = leptos::ssr::render_to_string(|| {
-        view! {
-            <MyHtml>
-                <div class="container-sm form-signin w-100 m-auto text-center" >
-                    <form>
-                        <h1 class="text-light mb-3 fw-normal">Confirm Code</h1>
+    let link = format!("/register/email_code?user_id={}", user.user_id());
+    app.db_client.upsert_user(user, user_version).await?;
 
-                        <div class="form-floating mb-3" >
-                            <input
-                                type="email"
-                                readonly
-                                class="form-control"
-                                id="email"
-                                value={request.email}
-                            />
-                            <label for="from">Email</label>
-                        </div>
-
-                        <MyInput input_type="text" name="email_code" label="Email Code" required=true/>
-
-                        <div class="input-group mb-3" >
-                            <input
-                                type="submit"
-                                class="form-control btn btn-success"
-                                value="REGISTER"
-                            />
-                        </div>
-                    </form>
-                </div>
-            </MyHtml>
-        }
-    });
-
-    Ok(HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(html.to_string()))
+    Ok(HttpResponse::SeeOther()
+        .insert_header((header::LOCATION, link))
+        .finish())
 }

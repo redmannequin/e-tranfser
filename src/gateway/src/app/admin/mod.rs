@@ -1,6 +1,7 @@
 mod admin_home;
 mod admin_login_;
 mod admin_payment;
+mod admin_payments;
 mod admin_user;
 mod admin_users;
 mod auth;
@@ -9,6 +10,9 @@ use actix_web::{http::header, web, HttpResponse};
 use admin_home::admin_home_view;
 use admin_login_::{admin_login, admin_login_form};
 use admin_payment::admin_payment_view;
+use admin_payments::admin_payments_view;
+use admin_user::admin_user_view;
+use admin_users::admin_users_view;
 use auth::AdminAuth;
 use leptos::view;
 
@@ -27,8 +31,9 @@ pub fn admin_scope() -> actix_web::Scope {
                 .wrap(AdminAuth)
                 .service(web::resource("/home").get(admin_home_view))
                 .service(web::resource("/payment").get(admin_payment_view))
-                .service(web::resource("/user").get(admin_user::admin_user_view))
-                .service(web::resource("/users").get(admin_users::admin_users_view)),
+                .service(web::resource("/payments").get(admin_payments_view))
+                .service(web::resource("/user").get(admin_user_view))
+                .service(web::resource("/users").get(admin_users_view)),
         )
         .default_service(web::to(admin_route_to_unauthorized))
 }

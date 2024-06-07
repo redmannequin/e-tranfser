@@ -106,17 +106,32 @@ impl DbClient {
             )
             .await?;
 
-        if let Some(row) = row {
-            let payment = Payment {
-                payment_id: row.try_get(0)?,
-                payment_data: row.try_get(2)?,
-            };
-            let version: i32 = row.try_get(1)?;
+        row.map(payment_from_row).transpose()
+    }
 
-            Ok(Some((T::from(payment), version as _)))
-        } else {
-            Ok(None)
-        }
+    pub async fn get_payments<T>(&self, limit: i64, offset: i64) -> Result<Vec<(T, u32)>, DbError>
+    where
+        T: From<Payment>,
+    {
+        let rows = self
+            .inner
+            .query(
+                r#"
+                SELECT
+                    payment_id,
+                    data_version,
+                    payment_data
+                FROM payments
+                LIMIT $1 
+                OFFSET $2
+                "#,
+                &[&limit, &offset],
+            )
+            .await?;
+
+        rows.into_iter()
+            .map(payment_from_row)
+            .collect::<Result<_, _>>()
     }
 
     pub async fn upsert_user<T>(&self, user: T, version: u32) -> Result<(), DbError>
@@ -242,4 +257,16 @@ where
     };
     let version: i32 = row.try_get(2)?;
     Ok((T::from(user), version as _))
+}
+
+fn payment_from_row<T>(row: Row) -> Result<(T, u32), DbError>
+where
+    T: From<Payment>,
+{
+    let payment = Payment {
+        payment_id: row.try_get(0)?,
+        payment_data: row.try_get(2)?,
+    };
+    let version: i32 = row.try_get(1)?;
+    Ok((T::from(payment), version as _))
 }

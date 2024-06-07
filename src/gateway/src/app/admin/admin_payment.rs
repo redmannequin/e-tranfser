@@ -26,8 +26,8 @@ pub async fn admin_payment_view(
     let html = leptos::ssr::render_to_string(|| {
         view! {
             <MyHtml>
-                <div class="container-sm form-signin w-100 m-auto" >
-                    <h1 class="text-center" >"Admin Payment View"</h1>
+                <div class="container-sm w-50" >
+                    <h1 class="">Admin Payment View</h1>
                     <PaymentView payment={payment} />
                 </div>
             </MyHtml>
