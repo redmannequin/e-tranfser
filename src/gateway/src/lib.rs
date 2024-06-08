@@ -2,12 +2,8 @@ mod api;
 mod app;
 pub mod log;
 
-use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
 use actix_web::{
-    cookie::{time::Duration, Key},
-    http::header,
-    middleware::Logger,
-    web, App, HttpResponse, HttpServer,
+    cookie::Key, http::header, middleware::Logger, web, App, HttpResponse, HttpServer,
 };
 use actix_web_opentelemetry::RequestTracing;
 use anyhow::Context;

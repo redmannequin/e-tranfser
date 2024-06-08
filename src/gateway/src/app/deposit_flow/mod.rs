@@ -24,7 +24,7 @@ pub const PAYOUT_COOKIE: &str = "payout_init";
 pub fn deposit_scope() -> actix_web::Scope {
     web::scope("deposit")
         .service(web::resource("").to(deposit_form))
-        .service(web::resource("create_payout").post(create_payout))
+        .service(web::resource("create_payout").get(create_payout))
         .service(web::resource("select_account").to(deposit_select_account))
         .service(web::resource("status").to(deposit_status))
         .service(web::resource("status_update").to(deposit_status_update))

@@ -5,11 +5,11 @@ use base64::{
     engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE},
     Engine,
 };
+use domain::PaymentId;
 use futures::future::join_all;
 use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
 use truelayer::model::AccountBalance;
-use uuid::Uuid;
 
 use crate::{
     app::{
@@ -22,7 +22,7 @@ use crate::{
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
     #[allow(unused)]
-    payment_id: Uuid,
+    payment_id: PaymentId,
     code: String,
 }
 
@@ -62,7 +62,7 @@ pub async fn deposit_select_account(
         .collect()
     };
 
-    let salt_b64 = STANDARD_NO_PAD.encode(query_params.payment_id);
+    let salt_b64 = STANDARD_NO_PAD.encode(query_params.payment_id.as_uuid());
     let salt = SaltString::from_b64(salt_b64.as_str()).unwrap();
     let valid_ibans = accounts
         .iter()
@@ -82,7 +82,7 @@ pub async fn deposit_select_account(
             <MyHtml>
                 <div class="container-sm form-signin w-100 m-auto" >
                     <h1 class="text-center" >"Select Account"</h1>
-                    <AccountList accounts={accounts} />
+                    <AccountList accounts={accounts} payment_id={query_params.payment_id} />
                 </div>
             </MyHtml>
         }
@@ -100,10 +100,10 @@ struct Account {
 }
 
 #[component]
-fn account_list(accounts: Vec<Account>) -> impl IntoView {
+fn account_list(accounts: Vec<Account>, payment_id: PaymentId) -> impl IntoView {
     let accounts_view = accounts.into_iter().map(|a| {
         let iban_b64 = URL_SAFE.encode(a.iban.as_str());
-        let link = format!("{}?iban={}", DEPOSIT_CREATE_PAYOUT, iban_b64);
+        let link = format!("{}?payment_id={}&iban={}", DEPOSIT_CREATE_PAYOUT, payment_id, iban_b64);
         view! {
             <a href={link} class="list-group-item list-group-item-action flex-column align-items-start">
                 <div class="d-flex w-100 justify-content-between" >
