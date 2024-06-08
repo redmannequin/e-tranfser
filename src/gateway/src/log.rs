@@ -10,6 +10,8 @@ use tracing_actix_web::{root_span, DefaultRootSpanBuilder, RootSpanBuilder};
 
 const PAYMENT_ID: &str = "payment_id";
 const PAYMENT_STATE: &str = "payment_state";
+const PAYOUT_ID: &str = "payout_id";
+const REFUND_ID: &str = "refund_id";
 
 pub struct DomainRootSpanBuilder;
 
@@ -18,6 +20,7 @@ impl RootSpanBuilder for DomainRootSpanBuilder {
         root_span!(
             request,
             payment_id = field::Empty,
+            payout_id = field::Empty,
             payment_state = field::Empty
         )
     }
@@ -32,6 +35,14 @@ impl RootSpanBuilder for DomainRootSpanBuilder {
 
 pub fn set_payment_id(payment_id: impl fmt::Display) {
     tracing::Span::current().record(PAYMENT_ID, payment_id.to_string());
+}
+
+pub fn set_payout_id(payout_id: impl fmt::Display) {
+    tracing::Span::current().record(PAYOUT_ID, payout_id.to_string());
+}
+
+pub fn set_refund_id(refund_id: impl fmt::Display) {
+    tracing::Span::current().record(REFUND_ID, refund_id.to_string());
 }
 
 pub fn set_payment_state(payment_state: PaymentState) {

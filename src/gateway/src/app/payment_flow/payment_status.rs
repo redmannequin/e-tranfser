@@ -66,14 +66,12 @@ pub async fn payment_status_update(
         PaymentState::InboundExecuted => "Payment Executed...",
         PaymentState::InboundSettled => "Payment Settled Into Landing Account",
         PaymentState::InboundFailed => "Payment Failed",
+        PaymentState::PayoutCreated => "Payment Deposit Created...",
+        PaymentState::PayoutExecuted => "Payment Deposit Executed",
+        PaymentState::PayoutFailed => "Payment Deposit Failed...",
         PaymentState::RefundCreated => "Payment Refund Created...",
-        PaymentState::RefundAuthorized => "Payment Refund Authorized...",
         PaymentState::RefundExecuted => "Payment Refunded",
         PaymentState::RefundFailed => "Payment Refund Failed",
-        PaymentState::OutboundCreated => "Payment Deposit Created...",
-        PaymentState::OutboundAuthorized => "Payment Deposit Authorized...",
-        PaymentState::OutboundExecuted => "Payment Deposit Executed",
-        PaymentState::OutboundFailed => "Payment Deposit Failed...",
     };
 
     let html = leptos::ssr::render_to_string(move || view! {<p>{status}</p>});
@@ -84,9 +82,9 @@ pub async fn payment_status_update(
         payment.state(),
         PaymentState::InboundFailed
             | PaymentState::RefundFailed
-            | PaymentState::OutboundFailed
+            | PaymentState::PayoutFailed
             | PaymentState::RefundExecuted
-            | PaymentState::OutboundExecuted
+            | PaymentState::PayoutExecuted
             | PaymentState::InboundSettled
     ) {
         res.status(StatusCode::from_u16(286).unwrap());

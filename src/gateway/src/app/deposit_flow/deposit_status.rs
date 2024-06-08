@@ -53,10 +53,12 @@ pub async fn deposit_status_update(
         )))?;
 
     let status = match payment.state() {
-        PaymentState::OutboundCreated => "Payment Deposit Created...",
-        PaymentState::OutboundAuthorized => "Payment Deposit Authorized...",
-        PaymentState::OutboundExecuted => "Payment Deposit Executed",
-        PaymentState::OutboundFailed => "Payment Deposit Failed...",
+        PaymentState::PayoutCreated => "Payment Deposit Created...",
+        PaymentState::PayoutExecuted => "Payment Deposit Executed",
+        PaymentState::RefundCreated
+        | PaymentState::RefundExecuted
+        | PaymentState::RefundFailed
+        | PaymentState::PayoutFailed => "Payment Deposit Failed...",
         _ => return Err(actix_web::error::ErrorInternalServerError("ummm...")),
     };
 
@@ -66,7 +68,7 @@ pub async fn deposit_status_update(
     // stop polling when payment reaches the states below
     if matches!(
         payment.state(),
-        PaymentState::OutboundFailed | PaymentState::OutboundExecuted
+        PaymentState::PayoutFailed | PaymentState::PayoutExecuted
     ) {
         res.status(StatusCode::from_u16(286).unwrap());
     }

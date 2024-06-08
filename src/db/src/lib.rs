@@ -109,6 +109,85 @@ impl DbClient {
         row.map(payment_from_row).transpose()
     }
 
+    pub async fn get_payment_by_payout_id<T>(
+        &self,
+        payout_id: impl AsRef<Uuid>,
+    ) -> Result<Option<(T, u32)>, DbError>
+    where
+        T: From<Payment>,
+    {
+        let row = self
+            .inner
+            .query_opt(
+                r#"
+                SELECT
+                    p.payment_id,
+                    p.data_version,
+                    p.payment_data
+                FROM 
+                    payout_id_to_payment_id pid
+                JOIN 
+                    payments p ON pid.payment_id = p.payment_id
+                WHERE 
+                    pid.payout_id = $1
+                "#,
+                &[payout_id.as_ref()],
+            )
+            .await?;
+
+        row.map(payment_from_row).transpose()
+    }
+
+    pub async fn register_payout_id(
+        &self,
+        payout_id: impl AsRef<Uuid>,
+        payment_id: impl AsRef<Uuid>,
+    ) -> Result<(), DbError> {
+        self.inner
+            .execute(
+                r#"
+                    INSERT INTO payments (
+                        payout_id,
+                        payment_id
+                    )
+                    VALUES($1, $2, NOW())
+                "#,
+                &[payout_id.as_ref(), payment_id.as_ref()],
+            )
+            .await?;
+        Ok(())
+    }
+
+    pub async fn get_payment_by_refund_id<T>(
+        &self,
+        refund_id: impl AsRef<Uuid>,
+    ) -> Result<Option<(T, u32)>, DbError>
+    where
+        T: From<Payment>,
+    {
+        let row = self
+            .inner
+            .query_opt(
+                r#"
+                SELECT
+                    payment_id,
+                    data_version,
+                    payment_data
+                FROM payments
+                FROM 
+                    refund_id_to_payment_id pid
+                JOIN 
+                    payments p ON pid.payment_id = p.payment_id
+                WHERE 
+                    pid.refund_id = $1
+                "#,
+                &[refund_id.as_ref()],
+            )
+            .await?;
+
+        row.map(payment_from_row).transpose()
+    }
+
     pub async fn get_payments<T>(&self, limit: i64, offset: i64) -> Result<Vec<(T, u32)>, DbError>
     where
         T: From<Payment>,

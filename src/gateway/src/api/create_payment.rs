@@ -77,6 +77,8 @@ async fn execute(
                     inbound_settled_at: None,
                     inbound_failed_at: None,
                 },
+                payout_data: None,
+                refund_data: None,
             },
             0,
         )

@@ -1,11 +1,20 @@
+use actix_session::Session;
 use actix_web::{web, HttpResponse};
+use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
+use base64::{engine::general_purpose::URL_SAFE, prelude::BASE64_STANDARD, Engine};
 use futures::future::join_all;
 use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
 use truelayer::model::AccountBalance;
 use uuid::Uuid;
 
-use crate::{app::component::MyHtml, AppContext};
+use crate::{
+    app::{
+        component::MyHtml,
+        deposit_flow::{DEPOSIT_CREATE_PAYOUT, PAYOUT_COOKIE},
+    },
+    AppContext,
+};
 
 #[derive(Debug, Deserialize)]
 pub struct QueryParams {
@@ -16,6 +25,7 @@ pub struct QueryParams {
 
 pub async fn deposit_select_account(
     app: web::Data<AppContext>,
+    session: Session,
     query_params: web::Query<QueryParams>,
 ) -> HttpResponse {
     let token = app
@@ -49,6 +59,20 @@ pub async fn deposit_select_account(
         .collect()
     };
 
+    let valid_ibans = accounts
+        .iter()
+        .map(|a| a.iban.as_str())
+        .collect::<Vec<_>>()
+        .join(",");
+    let salt_b64 = BASE64_STANDARD.encode(query_params.payment_id);
+    let salt = SaltString::from_b64(salt_b64.as_str()).unwrap();
+    let valid_ibans_hash = Argon2::default()
+        .hash_password(valid_ibans.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
+
+    session.insert(PAYOUT_COOKIE, valid_ibans_hash).unwrap();
+
     let html = leptos::ssr::render_to_string(|| {
         view! {
             <MyHtml>
@@ -73,14 +97,18 @@ struct Account {
 
 #[component]
 fn account_list(accounts: Vec<Account>) -> impl IntoView {
-    let accounts_view = accounts.into_iter().map(|a| view! {
-        <a href="#" class="list-group-item list-group-item-action flex-column align-items-start" >
-            <div class="d-flex w-100 justify-content-between" >
-                <h5 class="mb-1" >{a.name}</h5>
-                <small>{a.balance}</small>
-            </div>
-            <small>{a.iban}</small>
-        </a>
+    let accounts_view = accounts.into_iter().map(|a| {
+        let iban_b64 = URL_SAFE.encode(a.iban.as_str());
+        let link = format!("{}?iban={}", DEPOSIT_CREATE_PAYOUT, iban_b64);
+        view! {
+            <a href={link} class="list-group-item list-group-item-action flex-column align-items-start">
+                <div class="d-flex w-100 justify-content-between" >
+                    <h5 class="mb-1" >{a.name}</h5>
+                    <small>{a.balance}</small>
+                </div>
+                <small>{a.iban}</small>
+            </a>
+        }
     }).collect_view();
 
     view! {

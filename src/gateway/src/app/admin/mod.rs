@@ -19,21 +19,21 @@ use leptos::view;
 use crate::app::component::MyHtml;
 
 pub fn admin_scope() -> actix_web::Scope {
-    web::scope("/admin")
+    web::scope("admin")
         .service(
-            web::resource("/login")
+            web::resource("login")
                 .get(admin_login_form)
                 .post(admin_login),
         )
-        .service(web::resource("/unauthorized").get(admin_unauthorized))
+        .service(web::resource("unauthorized").get(admin_unauthorized))
         .service(
             web::scope("")
                 .wrap(AdminAuth)
-                .service(web::resource("/home").get(admin_home_view))
-                .service(web::resource("/payment").get(admin_payment_view))
-                .service(web::resource("/payments").get(admin_payments_view))
-                .service(web::resource("/user").get(admin_user_view))
-                .service(web::resource("/users").get(admin_users_view)),
+                .service(web::resource("home").get(admin_home_view))
+                .service(web::resource("payment").get(admin_payment_view))
+                .service(web::resource("payments").get(admin_payments_view))
+                .service(web::resource("user").get(admin_user_view))
+                .service(web::resource("users").get(admin_users_view)),
         )
         .default_service(web::to(admin_route_to_unauthorized))
 }

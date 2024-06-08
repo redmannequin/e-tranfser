@@ -189,7 +189,99 @@ pub async fn tl_webhook(
             payment.payment_statuses.inbound_failed_at = Some(failed_at);
             app.db_client.upsert_payment(payment, version + 1).await?;
         }
-        _ => unimplemented!(),
+        TlWebhook::PayoutExecuted {
+            payout_id,
+            executed_at,
+            ..
+        } => {
+            log::set_payout_id(payout_id);
+            log::set_payment_state(PaymentState::PayoutExecuted);
+
+            let (mut payment, version) = app
+                .db_client
+                .get_payment_by_payout_id::<Payment>(payout_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            log::set_payment_id(payment.payment_id);
+
+            match payment.payout_data.as_mut() {
+                Some(payout) => payout.payout_statuses.payout_executed_at = Some(executed_at),
+                None => todo!(),
+            }
+
+            app.db_client.upsert_payment(payment, version + 1).await?;
+        }
+        TlWebhook::PayoutFailed {
+            payout_id,
+            failed_at,
+            ..
+        } => {
+            log::set_payout_id(payout_id);
+            log::set_payment_state(PaymentState::PayoutFailed);
+
+            let (mut payment, version) = app
+                .db_client
+                .get_payment_by_payout_id::<Payment>(payout_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            log::set_payment_id(payment.payment_id);
+
+            match payment.payout_data.as_mut() {
+                Some(payout) => payout.payout_statuses.payout_failed_at = Some(failed_at),
+                None => todo!(),
+            }
+
+            app.db_client.upsert_payment(payment, version + 1).await?;
+        }
+        TlWebhook::RefundExecuted {
+            refund_id,
+            executed_at,
+            ..
+        } => {
+            log::set_refund_id(refund_id);
+            log::set_payment_state(PaymentState::RefundExecuted);
+
+            let (mut payment, version) = app
+                .db_client
+                .get_payment_by_refund_id::<Payment>(refund_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            log::set_payment_id(payment.payment_id);
+
+            match payment.refund_data.as_mut() {
+                Some(refund) => refund.refund_statuses.refund_executed_at = Some(executed_at),
+                None => todo!(),
+            }
+
+            app.db_client.upsert_payment(payment, version + 1).await?;
+        }
+        TlWebhook::RefundFailed {
+            refund_id,
+            failed_at,
+            ..
+        } => {
+            log::set_refund_id(refund_id);
+            log::set_payment_state(PaymentState::RefundFailed);
+
+            let (mut payment, version) = app
+                .db_client
+                .get_payment_by_refund_id::<Payment>(refund_id)
+                .await?
+                .ok_or(PublicError::Invalid(String::from("test")))?;
+
+            log::set_payment_id(payment.payment_id);
+
+            match payment.refund_data.as_mut() {
+                Some(refund) => refund.refund_statuses.refund_failed_at = Some(failed_at),
+                None => todo!(),
+            }
+
+            app.db_client.upsert_payment(payment, version + 1).await?;
+        }
+        TlWebhook::ExternalPaymentReceived { .. } => unimplemented!(),
     }
     Ok(HttpResponse::Ok())
 }

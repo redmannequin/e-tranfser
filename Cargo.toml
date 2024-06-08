@@ -10,10 +10,12 @@ gateway = { path = "src/gateway" }
 truelayer = { path = "src/truelayer" }
 
 # External
+actix-session = "0.9"
 actix-web = "4"
 actix-web-opentelemetry = "0.18"
 anyhow = "1"
 argon2 = "0.5"
+base64 = "0.22"
 chrono = "0.4"
 config = "0.14"
 email_address = "0.2"

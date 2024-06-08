@@ -40,7 +40,7 @@ async fn execute(
         Argon2::default()
             .verify_password(request.security_answer.as_bytes(), &parsed_hash)
             .map_or(false, |_| true)
-            && payment.payment_statuses.state() < PaymentState::OutboundCreated
+            && payment.state() < PaymentState::PayoutCreated
     };
 
     if is_vaild {

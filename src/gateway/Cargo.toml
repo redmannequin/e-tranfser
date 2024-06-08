@@ -12,10 +12,12 @@ domain = { workspace = true }
 truelayer = { workspace = true }
 
 # External
-actix-web = { workspace = true, features = ["cookies"] }
+actix-session = { workspace = true, features = ["cookie-session"] }
+actix-web = { workspace = true, features = ["cookies", "secure-cookies"] }
 actix-web-opentelemetry = { workspace = true }
 anyhow = { workspace = true }
 argon2 = { workspace = true }
+base64 = { workspace = true }
 chrono = { workspace = true, default-features = false }
 config = { workspace = true }
 email_address = { workspace = true }

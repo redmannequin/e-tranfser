@@ -1,10 +1,11 @@
 pub mod v1;
 
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use tokio_postgres::types::Json;
 use uuid::Uuid;
 
-use crate::entities::v1::{PaymentStatusesV1, UserDataV1};
+use crate::entities::v1::UserDataV1;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Payment
@@ -35,12 +36,44 @@ pub enum PaymentData {
         security_question: String,
         security_answer: String,
         payment_statuses: PaymentStatuses,
+        payout_data: Option<PayoutData>,
+        refund_data: Option<RefundData>,
     },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub enum PaymentStatuses {
-    V1(PaymentStatusesV1),
+pub struct PayoutData {
+    pub payout_id: Uuid,
+    pub payout_statuses: PayoutStatuses,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PayoutStatuses {
+    pub payout_created_at: DateTime<Utc>,
+    pub payout_executed_at: Option<DateTime<Utc>>,
+    pub payout_failed_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefundData {
+    pub refund_id: Uuid,
+    pub refund_statuses: RefundStatuses,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefundStatuses {
+    pub refund_created_at: DateTime<Utc>,
+    pub refund_executed_at: Option<DateTime<Utc>>,
+    pub refund_failed_at: Option<DateTime<Utc>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PaymentStatuses {
+    pub inbound_created_at: DateTime<Utc>,
+    pub inbound_authorized_at: Option<DateTime<Utc>>,
+    pub inbound_executed_at: Option<DateTime<Utc>>,
+    pub inbound_settled_at: Option<DateTime<Utc>>,
+    pub inbound_failed_at: Option<DateTime<Utc>>,
 }
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -4,7 +4,10 @@ use leptos::{component, view, IntoView};
 use serde::Deserialize;
 
 use crate::{
-    app::component::{MyHtml, MyInput},
+    app::{
+        component::{MyHtml, MyInput},
+        registration_flow::{REGISTER_EMAIL_CHECK_PAGE, REGISTER_PAGE},
+    },
     AppContext,
 };
 
@@ -13,7 +16,7 @@ pub async fn registration_form() -> HttpResponse {
         view! {
             <MyHtml>
                 <div class="container-sm form-signin w-100 m-auto text-center">
-                    <form action="/register" method="post">
+                    <form action={REGISTER_PAGE} method="post">
                         <h1 class="text-light mb-3 fw-normal">Register</h1>
                         <MyInput input_type="text" name="first_name" label="First Name" required=true/>
                         <MyInput input_type="text" name="last_name" label="Last Name" required=true/>
@@ -89,7 +92,7 @@ pub fn email_input(email: String, registered: bool, check: bool) -> impl IntoVie
                 id="email"
                 name="email"
                 data-1p-ignore
-                hx-post="/register/check_email"
+                hx-post={REGISTER_EMAIL_CHECK_PAGE}
                 value={email}
                 required=true
             />

@@ -5,7 +5,7 @@ use rand::distributions::{Alphanumeric, DistString};
 use serde::Deserialize;
 use tracing::instrument;
 
-use crate::{api::PublicError, AppContext};
+use crate::{api::PublicError, app::registration_flow::REGISTER_EMAIL_CODE_PAGE, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct FormData {
@@ -56,7 +56,7 @@ async fn execute(
         ),
     };
 
-    let link = format!("/register/email_code?user_id={}", user.user_id());
+    let link = format!("{}?user_id={}", REGISTER_EMAIL_CODE_PAGE, user.user_id());
     app.db_client.upsert_user(user, user_version).await?;
 
     Ok(HttpResponse::SeeOther()

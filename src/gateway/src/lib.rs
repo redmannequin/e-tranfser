@@ -2,7 +2,13 @@ mod api;
 mod app;
 pub mod log;
 
-use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
+use actix_session::{config::PersistentSession, storage::CookieSessionStore, SessionMiddleware};
+use actix_web::{
+    cookie::{time::Duration, Key},
+    http::header,
+    middleware::Logger,
+    web, App, HttpResponse, HttpServer,
+};
 use actix_web_opentelemetry::RequestTracing;
 use anyhow::Context;
 use db::DbClient;
@@ -38,6 +44,7 @@ impl AppContext {
 
 pub async fn start(config: AppConfig) -> anyhow::Result<()> {
     let app_context = web::Data::new(AppContext::init(config.clone()).await?);
+    let secret_key = Key::generate();
 
     let http_server = HttpServer::new(move || {
         App::new()
@@ -45,12 +52,10 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .wrap(Logger::default())
             .wrap(RequestTracing::new())
             .wrap(TracingLogger::<DomainRootSpanBuilder>::new())
-            .service(web::resource("/health_check").route(web::get().to(HttpResponse::Ok)))
-            .service(web::resource("/").to(app::home))
+            .service(web::resource("/health_check").get(HttpResponse::Ok))
             .service(web::resource("/data_callback").to(app::tl_data_callback))
-            .service(app::payment_flow::payment_scope())
-            .service(app::deposit_flow::deposit_scope())
-            .service(app::registration_flow::register_scope())
+            .service(web::resource("/").get(redirect_to_app))
+            .service(app::app_scope(secret_key.clone()))
             .service(app::admin::admin_scope())
             .service(
                 web::scope("/api")
@@ -61,7 +66,14 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .default_service(web::to(app::not_found))
     })
     .bind(("0.0.0.0", config.http_port))?
+    .workers(1)
     .run();
 
     http_server.await.context("http_server")
+}
+
+async fn redirect_to_app() -> HttpResponse {
+    HttpResponse::SeeOther()
+        .insert_header((header::LOCATION, "/app"))
+        .finish()
 }

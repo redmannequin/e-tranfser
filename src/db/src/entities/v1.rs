@@ -5,15 +5,6 @@ use serde::{Deserialize, Serialize};
 // Payment
 ////////////////////////////////////////////////////////////////////////////////
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PaymentStatusesV1 {
-    pub inbound_created_at: DateTime<Utc>,
-    pub inbound_authorized_at: Option<DateTime<Utc>>,
-    pub inbound_executed_at: Option<DateTime<Utc>>,
-    pub inbound_settled_at: Option<DateTime<Utc>>,
-    pub inbound_failed_at: Option<DateTime<Utc>>,
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // User
 ////////////////////////////////////////////////////////////////////////////////
