@@ -1,7 +1,10 @@
 use actix_session::Session;
 use actix_web::{web, HttpResponse};
 use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
-use base64::{engine::general_purpose::URL_SAFE, prelude::BASE64_STANDARD, Engine};
+use base64::{
+    engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE},
+    Engine,
+};
 use futures::future::join_all;
 use leptos::{component, view, CollectView, IntoView};
 use serde::Deserialize;
@@ -59,19 +62,20 @@ pub async fn deposit_select_account(
         .collect()
     };
 
+    let salt_b64 = STANDARD_NO_PAD.encode(query_params.payment_id);
+    let salt = SaltString::from_b64(salt_b64.as_str()).unwrap();
     let valid_ibans = accounts
         .iter()
-        .map(|a| a.iban.as_str())
+        .map(|a| {
+            Argon2::default()
+                .hash_password(a.iban.as_bytes(), &salt)
+                .unwrap()
+                .to_string()
+        })
         .collect::<Vec<_>>()
         .join(",");
-    let salt_b64 = BASE64_STANDARD.encode(query_params.payment_id);
-    let salt = SaltString::from_b64(salt_b64.as_str()).unwrap();
-    let valid_ibans_hash = Argon2::default()
-        .hash_password(valid_ibans.as_bytes(), &salt)
-        .unwrap()
-        .to_string();
 
-    session.insert(PAYOUT_COOKIE, valid_ibans_hash).unwrap();
+    session.insert(PAYOUT_COOKIE, valid_ibans).unwrap();
 
     let html = leptos::ssr::render_to_string(|| {
         view! {

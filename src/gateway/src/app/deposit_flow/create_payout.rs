@@ -1,6 +1,10 @@
 use actix_session::Session;
 use actix_web::{http::header, web, HttpResponse};
-use base64::{engine::general_purpose::URL_SAFE, Engine};
+use argon2::{password_hash::SaltString, Argon2, PasswordHasher};
+use base64::{
+    engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE},
+    Engine,
+};
 use chrono::Utc;
 use domain::{Payment, PaymentId, PaymentState, PayoutData, PayoutId, PayoutStatuses};
 use serde::Deserialize;
@@ -23,12 +27,19 @@ pub async fn create_payout(
     query_params: web::Query<QueryParams>,
 ) -> Result<HttpResponse, PublicError> {
     let payment_id = query_params.payment_id;
+
+    let salt_b64 = STANDARD_NO_PAD.encode(query_params.payment_id.as_uuid());
+    let salt = SaltString::from_b64(salt_b64.as_str()).unwrap();
     let iban = String::from_utf8(URL_SAFE.decode(query_params.iban.as_str()).unwrap()).unwrap();
+    let hash_iban = Argon2::default()
+        .hash_password(iban.as_bytes(), &salt)
+        .unwrap()
+        .to_string();
 
     log::set_payment_id(payment_id);
 
     let valid_ibans: String = session.get(PAYOUT_COOKIE).unwrap().unwrap();
-    if !valid_ibans.contains(iban.as_str()) {
+    if !valid_ibans.contains(hash_iban.as_str()) {
         todo!()
     }
 
