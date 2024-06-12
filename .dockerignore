@@ -1,0 +1,5 @@
+target
+secrets
+
+.evn
+env*.json

@@ -1,4 +1,4 @@
-use actix_web::{http::header, post, web, HttpResponse, Responder};
+use actix_web::{http::header, post, web, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
@@ -6,7 +6,6 @@ use argon2::{
 use chrono::Utc;
 use domain::{Payment, PaymentId, PaymentState, PaymentStatuses};
 use serde::Deserialize;
-use tracing::instrument;
 
 use crate::{log, AppContext};
 
@@ -27,15 +26,9 @@ pub struct FormData {
 pub async fn create_payment(
     app: web::Data<AppContext>,
     form: web::Form<FormData>,
-) -> Result<impl Responder, PublicError> {
-    execute(app, form.0).await
-}
+) -> Result<HttpResponse, PublicError> {
+    let form = form.0;
 
-#[instrument(skip(app))]
-async fn execute(
-    app: web::Data<AppContext>,
-    form: FormData,
-) -> Result<impl Responder, PublicError> {
     let salt = SaltString::generate(&mut OsRng);
     let argon2 = Argon2::default();
     let security_answer = argon2

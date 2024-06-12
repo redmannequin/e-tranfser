@@ -33,7 +33,9 @@ impl AppContext {
             db_client: DbClient::connect(config.db_config)
                 .await
                 .context("postgres connection")?,
-            tl_client: TlClient::new(config.tl_config),
+            tl_client: TlClient::new(config.tl_config)
+                .await
+                .context("truelayer connection")?,
         })
     }
 }

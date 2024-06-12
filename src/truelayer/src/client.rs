@@ -1,12 +1,13 @@
-use std::{sync::Arc, time::Duration};
-
-use reqwest::{
-    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-    ClientBuilder, StatusCode,
+use std::{
+    sync::Arc,
+    time::{Duration, Instant},
 };
+
+use reqwest::{header, ClientBuilder, StatusCode};
 use reqwest_middleware::ClientWithMiddleware;
 use reqwest_retry::{policies::ExponentialBackoff, RetryTransientMiddleware};
 use reqwest_tracing::TracingMiddleware;
+use timed_option::TimedOption;
 use tokio::sync::Mutex;
 use tracing::instrument;
 use truelayer_signing::Method;
@@ -26,7 +27,7 @@ pub struct TlClient {
     pub client_secret: String,
     pub kid: String,
     private_key: String,
-    access_token: Arc<Mutex<Option<String>>>,
+    access_token: Arc<Mutex<TimedOption<String, Instant>>>,
     pub redirect_uri: String,
     pub data_redirect_uri: String,
     merchant_account_id: Uuid,
@@ -35,7 +36,7 @@ pub struct TlClient {
 impl TlClient {
     const TIMEOUT: u64 = 2500;
 
-    pub fn new(tl_config: TlConfig) -> Self {
+    pub async fn new(tl_config: TlConfig) -> Result<TlClient, TlError> {
         let raw_client = ClientBuilder::new()
             .timeout(Duration::from_millis(Self::TIMEOUT))
             .build()
@@ -50,18 +51,22 @@ impl TlClient {
             ))
             .build();
 
-        Self {
+        let res = Self {
             client,
             enviornment: tl_config.enviornment,
             client_id: tl_config.client_id,
             client_secret: tl_config.client_secret,
             kid: tl_config.kid,
             private_key: tl_config.private_key,
-            access_token: Arc::new(Mutex::new(None)),
+            access_token: Arc::new(Mutex::new(TimedOption::empty())),
             redirect_uri: tl_config.redirect_uri,
             data_redirect_uri: tl_config.data_redirect_uri,
+
             merchant_account_id: tl_config.merchant_account_id,
-        }
+        };
+
+        res.get_auth_token().await?;
+        Ok(res)
     }
 
     pub fn return_uri(&self) -> &str {
@@ -72,6 +77,7 @@ impl TlClient {
     // PAYMENTS V3 API
     //
 
+    #[instrument(skip_all)]
     pub async fn auth_payments_v3(&self) -> Result<AuthResponse, TlError> {
         let endpoint = format!("https://auth.{}/connect/token", self.enviornment.uri());
 
@@ -90,8 +96,8 @@ impl TlClient {
         let req = self
             .client
             .post(endpoint)
-            .header(ACCEPT, "application/json")
-            .header(CONTENT_TYPE, "application/json")
+            .header(header::ACCEPT, "application/json")
+            .header(header::CONTENT_TYPE, "application/json")
             .body(body)
             .build()
             .map_err(reqwest_middleware::Error::Reqwest)?;
@@ -101,14 +107,14 @@ impl TlClient {
             StatusCode::OK => res.json().await.map_err(TlError::Response),
             StatusCode::BAD_REQUEST | StatusCode::INTERNAL_SERVER_ERROR => {
                 let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
-                println!("\nTlClient::Auth ERROR:\n{:?}", err);
+                println!("\nTlClient::auth_payments_v3 ERROR:\n{:?}", err);
                 unimplemented!()
             }
             _ => todo!(),
         }
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub async fn create_ma_payment(
         &self,
         payer_full_name: &str,
@@ -118,14 +124,7 @@ impl TlClient {
         reference: &str,
     ) -> Result<CreatePaymentResponse, TlError> {
         let endpoint = format!("https://api.{}/v3/payments", self.enviornment.uri());
-
-        let access_token = {
-            let mut access_token = self.access_token.lock().await;
-            if access_token.is_none() {
-                *access_token = Some(self.auth_payments_v3().await?.access_token);
-            }
-            access_token.to_owned().unwrap()
-        };
+        let access_token = self.get_auth_token().await?;
 
         let idempotency_key = Uuid::new_v4().to_string();
         let body = format!(
@@ -178,8 +177,8 @@ impl TlClient {
         let req = self
             .client
             .post(endpoint)
-            .header(CONTENT_TYPE, "application/json")
-            .header(AUTHORIZATION, format!("Bearer {}", access_token))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header("authorization", format!("Bearer {}", access_token))
             .header("Idempotency-Key", idempotency_key)
             .header("Tl-Signature", tl_signature)
             .body(body)
@@ -194,13 +193,13 @@ impl TlClient {
                 .map_err(TlError::Response),
             _ => {
                 let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
-                println!("\nTlClient::Payment Error:\n{}", err);
+                println!("\nTlClient::create_ma_payment Error:\n{}", err);
                 unimplemented!()
             }
         }
     }
 
-    #[instrument(skip(self))]
+    #[instrument(skip_all)]
     pub async fn create_payout(
         &self,
         payee_full_name: &str,
@@ -208,52 +207,85 @@ impl TlClient {
         amount: u32,
         reference: &str,
     ) -> Result<CreatePayoutResponse, TlError> {
-        let endpoint = format!("http://api.{}/v3/payouts", self.enviornment.uri());
+        let endpoint = format!("https://api.{}/v3/payouts", self.enviornment.uri());
+        let access_token = self.get_auth_token().await?;
+        let idempotency_key = Uuid::new_v4().to_string();
+        let body = format!(
+            r#"
+                {{
+                    "amount_in_minor": {},
+                    "merchant_account_id": "{}",
+                    "currency": "GBP",
+                    "beneficiary": {{
+                        "type": "external_account",
+                        "reference": "{}",
+                        "account_holder_name": "{}",
+                        "account_identifier": {{
+                            "type": "iban",
+                            "iban": "{}"
+                        }}
+                    }}
+                }}
+            "#,
+            amount, self.merchant_account_id, reference, payee_full_name, payee_iban
+        );
+
+        let tl_signature =
+            truelayer_signing::sign_with_pem(self.kid.as_str(), self.private_key.as_bytes())
+                .method(Method::Post)
+                .path("/v3/payouts")
+                .header("Idempotency-Key", idempotency_key.as_bytes())
+                .body(body.as_bytes())
+                .build_signer()
+                .sign()
+                .unwrap();
+
+        println!("\n\n\n {} \n\n\n", &access_token);
+
         let req = self
             .client
             .post(endpoint)
-            .header(CONTENT_TYPE, "application/json")
-            .header(AUTHORIZATION, self.client_id.clone())
-            .body(format!(
-                r#"
-                    {{
-                        "amount_in_minor": {},
-                        "merchant_account_id": "{}",
-                        "currency": "GBP",
-                        "beneficiary": {{
-                            "type": "external_account",
-                            "reference": "{}",
-                            "account_holder_name": "{}",
-                            "account_identifier": {{
-                                "type": "iban",
-                                "iban": "{}"
-                            }}
-                        }}
-                    }}
-                "#,
-                amount, self.merchant_account_id, reference, payee_full_name, payee_iban
-            ))
+            .header(header::CONTENT_TYPE, "application/json")
+            .header(header::AUTHORIZATION, format!("Bearer {}", access_token))
+            .header("Idempotency-Key", idempotency_key)
+            .header("Tl-Signature", tl_signature)
+            .body(body)
             .build()
-            .unwrap();
+            .map_err(reqwest_middleware::Error::Reqwest)?;
+
+        println!("\n\n {:?} \n\n", req.headers());
+
         let res = self.client.execute(req).await?;
         match res.status() {
-            StatusCode::CREATED => res.json().await.map_err(TlError::Response),
+            StatusCode::ACCEPTED => res.json().await.map_err(TlError::Response),
             _ => {
+                let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
+                println!("\nTlClient::create_payout Error:\n{}", err);
                 unimplemented!()
             }
         }
+    }
+
+    async fn get_auth_token(&self) -> Result<String, TlError> {
+        let mut access_token = self.access_token.lock().await;
+        if access_token.is_none() {
+            let res = self.auth_payments_v3().await?;
+            *access_token = TimedOption::new(res.access_token, Duration::from_secs(res.expires_in));
+        }
+        Ok(access_token.clone().into_option().unwrap())
     }
 
     //
     //  DATA API
     //
 
+    #[instrument(skip_all)]
     pub async fn auth_data(&self, code: &str) -> Result<AuthResponse, TlError> {
         let endpoint = format!("https://auth.{}/connect/token", self.enviornment.uri());
         let req = self
             .client
             .post(endpoint)
-            .header(CONTENT_TYPE, "application/json")
+            .header(header::CONTENT_TYPE, "application/json")
             .body(format!(
                 r#"
                     {{
@@ -273,19 +305,20 @@ impl TlClient {
             StatusCode::OK => res.json().await.map_err(TlError::Response),
             _ => {
                 let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
-                println!("\nTlClient::DataAuth Error:\n{}", err);
+                println!("\nTlClient::auth_data Error:\n{}", err);
                 unimplemented!()
             }
         }
     }
 
+    #[instrument(skip_all)]
     pub async fn get_accounts(&self, access_token: &str) -> Result<GetAccounts, TlError> {
         let endpoint = format!("https://api.{}/data/v1/accounts", self.enviornment.uri());
         let req = self
             .client
             .get(endpoint)
-            .header(ACCEPT, "application/json")
-            .header(AUTHORIZATION, format!("Bearer {}", access_token))
+            .header(header::ACCEPT, "application/json")
+            .header(header::AUTHORIZATION, format!("Bearer {}", access_token))
             .build()
             .unwrap();
         let res = self.client.execute(req).await?;
@@ -293,12 +326,13 @@ impl TlClient {
             StatusCode::OK => res.json().await.map_err(TlError::Response),
             _ => {
                 let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
-                println!("\nTlClient::GetAccounts Error:\n{}", err);
+                println!("\nTlClient::get_accounts Error:\n{}", err);
                 unimplemented!()
             }
         }
     }
 
+    #[instrument(skip_all)]
     pub async fn get_account_balance(
         &self,
         access_token: &str,
@@ -312,8 +346,8 @@ impl TlClient {
         let req = self
             .client
             .get(endpoint)
-            .header(ACCEPT, "application/json")
-            .header(AUTHORIZATION, format!("Bearer {}", access_token))
+            .header(header::ACCEPT, "application/json")
+            .header(header::AUTHORIZATION, format!("Bearer {}", access_token))
             .build()
             .unwrap();
         let res = self.client.execute(req).await?;
@@ -325,7 +359,7 @@ impl TlClient {
                 .map_err(TlError::Response),
             _ => {
                 let err: serde_json::Value = res.json().await.map_err(TlError::Response)?;
-                println!("\nTlClient::GetAccounts Error:\n{}", err);
+                println!("\nTlClient::get_account_balance Error:\n{}", err);
                 unimplemented!()
             }
         }
