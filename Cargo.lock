@@ -622,10 +622,8 @@ checksum = "a21f936df1771bf62b77f047b726c4625ff2e8aa607c01ec06e5a05bd8463401"
 dependencies = [
  "android-tzdata",
  "iana-time-zone",
- "js-sys",
  "num-traits",
  "serde",
- "wasm-bindgen",
  "windows-targets 0.52.5",
 ]
 
@@ -681,6 +679,12 @@ name = "collection_literals"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "186dce98367766de751c42c4f03970fc60fc012296e706ccbb9d5df9b6c1e271"
+
+[[package]]
+name = "concat_const"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "105f2bacffc2751fc3f4f2b69b9c2d6f793d8807f03ee733e89a7baa8c9f8c42"
 
 [[package]]
 name = "config"
@@ -1134,6 +1138,7 @@ dependencies = [
  "argon2",
  "base64 0.22.1",
  "chrono",
+ "concat_const",
  "config",
  "db",
  "domain",

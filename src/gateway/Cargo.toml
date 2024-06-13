@@ -19,6 +19,7 @@ anyhow = { workspace = true }
 argon2 = { workspace = true }
 base64 = { workspace = true }
 chrono = { workspace = true, default-features = false }
+concat_const = { workspace = true }
 config = { workspace = true }
 email_address = { workspace = true }
 futures = { workspace = true }

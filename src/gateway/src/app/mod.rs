@@ -18,6 +18,8 @@ pub use home::home;
 pub use not_found::not_found;
 pub use tl_data_callback::tl_data_callback;
 
+pub const APP_ROOT: &str = "/app";
+
 pub fn app_scope(secret_key: Key) -> impl HttpServiceFactory + 'static {
     Scope::new("app")
         .wrap(

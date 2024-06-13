@@ -1,4 +1,4 @@
-use actix_web::{http::header, post, web, HttpResponse};
+use actix_web::{http::header, web, HttpResponse};
 use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
@@ -7,9 +7,7 @@ use chrono::Utc;
 use domain::{Payment, PaymentId, PaymentState, PaymentStatuses};
 use serde::Deserialize;
 
-use crate::{log, AppContext};
-
-use super::PublicError;
+use crate::{api::PublicError, log, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct FormData {
@@ -22,7 +20,6 @@ pub struct FormData {
     security_answer: String,
 }
 
-#[post("/create_payment")]
 pub async fn create_payment(
     app: web::Data<AppContext>,
     form: web::Form<FormData>,

@@ -66,7 +66,7 @@ pub async fn check_email(app: web::Data<AppContext>, form: web::Form<FormData>) 
 }
 
 #[component]
-pub fn email_input(email: String, registered: bool, check: bool) -> impl IntoView {
+fn email_input(email: String, registered: bool, check: bool) -> impl IntoView {
     let (class, err_msg) = match (
         check,
         registered,
