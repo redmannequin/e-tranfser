@@ -1,12 +1,19 @@
 [workspace]
-members = ["src/db", "src/domain", "src/gateway", "src/truelayer"]
+members = [
+    "src/contracts",
+    "src/db",
+    "src/domain",
+    "src/gateway",
+    "src/payment-manager",
+    "src/truelayer",
+]
 resolver = "2"
 
 [workspace.dependencies]
 # Local
+contracts = { path = "src/contracts" }
 db = { path = "src/db" }
 domain = { path = "src/domain" }
-gateway = { path = "src/gateway" }
 truelayer = { path = "src/truelayer" }
 
 # External
@@ -42,6 +49,7 @@ thiserror = "1"
 timed-option = "0.2"
 tokio = "1"
 tokio-postgres = "0.7"
+tonic = "0.11"
 tracing = "0.1"
 tracing-actix-web = "0.7"
 tracing-bunyan-formatter = "0.3"
