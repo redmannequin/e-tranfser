@@ -50,7 +50,7 @@ pub async fn create_payout(
     });
 
     app.db_client
-        .upsert_payment(payment, version + 1)
+        .upsert_payment(payment, version + 2)
         .await
         .unwrap();
 

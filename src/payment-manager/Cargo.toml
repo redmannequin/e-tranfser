@@ -14,6 +14,9 @@ truelayer = { workspace = true }
 anyhow = { workspace = true }
 chrono = { workspace = true, default-features = false }
 config = { workspace = true }
+hyper = { workspace = true }
+http-body = { workspace = true }
+http = { workspace = true }
 opentelemetry = { workspace = true, default-features = false, features = [
     "trace",
 ] }
@@ -26,9 +29,13 @@ opentelemetry-otlp = { workspace = true, features = [
 ] }
 opentelemetry-semantic-conventions = { workspace = true }
 opentelemetry-stdout = { workspace = true, features = ["trace"] }
+pin-project = { workspace = true }
 serde = { workspace = true }
+serde-aux = { workspace = true }
+serde_json = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros"] }
 tonic = { workspace = true }
+tower = { workspace = true }
 tracing = { workspace = true }
 tracing-bunyan-formatter = { workspace = true }
 tracing-opentelemetry = { workspace = true }

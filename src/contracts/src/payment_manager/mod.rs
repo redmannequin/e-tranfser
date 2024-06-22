@@ -1,7 +1,13 @@
+use std::str::FromStr;
+
 use anyhow::Context;
 use domain::{PaymentId, PayoutId};
 use serde::Deserialize;
-use tonic::codegen::{Body, Bytes, StdError};
+use tonic::{
+    codegen::{Body, Bytes, StdError},
+    transport::{Channel, Uri},
+};
+use tower::ServiceBuilder;
 
 pub mod server {
     pub use crate::protos::payment_manager::{
@@ -29,12 +35,20 @@ pub struct PaymentManagerClient<T = BigBoyGrpcChannel> {
 }
 
 impl PaymentManagerClient {
-    pub async fn connect() -> anyhow::Result<Self> {
-        Ok(PaymentManagerClient {
-            inner: protos::PaymentManagerClient::connect("")
-                .await
-                .context("connect")?,
-        })
+    // pub async fn connect(host: &str, port: u16) -> anyhow::Result<Self> {
+    //     Ok(PaymentManagerClient {
+    //         inner: protos::PaymentManagerClient::connect((host, port))
+    //             .await
+    //             .context("connect")?,
+    //     })
+    // }
+
+    pub async fn connect(host: &str, port: u16) -> anyhow::Result<Self> {
+        let uri = Uri::from_str(&format!("http://{}:{}", host, port)).context("test")?;
+        let channel = Channel::builder(uri).connect().await?;
+        let channel = ServiceBuilder::new().service(channel);
+        let client = protos::PaymentManagerClient::new(channel);
+        Ok(PaymentManagerClient { inner: client })
     }
 }
 

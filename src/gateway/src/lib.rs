@@ -39,7 +39,7 @@ impl AppContext {
             tl_client: TlClient::new(config.tl_config)
                 .await
                 .context("truelayer connection")?,
-            pm_client: PaymentManagerClient::connect()
+            pm_client: PaymentManagerClient::connect(&config.pm_config.host, config.pm_config.port)
                 .await
                 .context("payment-manager connection")?,
         })
