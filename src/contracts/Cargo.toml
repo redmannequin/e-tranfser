@@ -1,0 +1,20 @@
+[package]
+name = "contracts"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Local
+domain = { workspace = true }
+
+# External
+anyhow = { workspace = true }
+chrono = { workspace = true, default-features = false }
+prost = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }
+tonic = { workspace = true }
+tower = { workspace = true }
+
+[build-dependencies]
+tonic-build = "0.11"

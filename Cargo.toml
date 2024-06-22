@@ -1,12 +1,19 @@
 [workspace]
-members = ["src/db", "src/domain", "src/gateway", "src/truelayer"]
+members = [
+    "src/contracts",
+    "src/db",
+    "src/domain",
+    "src/gateway",
+    "src/payment-manager",
+    "src/truelayer",
+]
 resolver = "2"
 
 [workspace.dependencies]
 # Local
+contracts = { path = "src/contracts" }
 db = { path = "src/db" }
 domain = { path = "src/domain" }
-gateway = { path = "src/gateway" }
 truelayer = { path = "src/truelayer" }
 
 # External
@@ -22,13 +29,18 @@ config = "0.14"
 email_address = "0.2"
 futures = "0.3"
 futures-util = "0.3"
+http = "0.2"
+http-body = "0.4"
+hyper = "1.3"
 leptos = "0.6"
 lettre = "0.11"
-opentelemetry = "0.23"
+opentelemetry = { version = "0.23", default-features = false }
 opentelemetry_sdk = "0.23"
 opentelemetry-otlp = "0.16"
 opentelemetry-semantic-conventions = "0.15.0"
 opentelemetry-stdout = "0.4"
+pin-project = "1.1"
+prost = "0.12"
 rand = { version = "0.8" }
 reqwest = { version = "0.12", features = ["json"] }
 reqwest-middleware = "0.3"
@@ -37,15 +49,21 @@ reqwest-tracing = "0.5"
 serde = "1"
 serde_json = "1"
 serde_path_to_error = "0.1"
+serde-aux = "4.5"
 sqlx = { version = "0.7", default-features = false }
 thiserror = "1"
 timed-option = "0.2"
 tokio = "1"
 tokio-postgres = "0.7"
+tonic = "0.11"
+tower = "0.4"
 tracing = "0.1"
-tracing-actix-web = "0.7"
+tracing-actix-web = "0.7.4"
 tracing-bunyan-formatter = "0.3"
 tracing-opentelemetry = "0.24"
 tracing-subscriber = "0.3"
 truelayer-signing = "0.3"
 uuid = "1"
+
+[profile.release]
+lto = "fat"

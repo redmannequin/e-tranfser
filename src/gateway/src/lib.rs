@@ -7,6 +7,7 @@ use actix_web::{
 };
 use actix_web_opentelemetry::RequestTracing;
 use anyhow::Context;
+use contracts::payment_manager::{BigBoyGrpcChannel, PaymentManagerClient, PaymentManagerConfig};
 use db::DbClient;
 use log::DomainRootSpanBuilder;
 use serde::Deserialize;
@@ -20,11 +21,13 @@ pub struct AppConfig {
     pub http_port: u16,
     pub db_config: DbConfig,
     pub tl_config: TlConfig,
+    pub pm_config: PaymentManagerConfig,
 }
 
 pub struct AppContext {
     db_client: DbClient,
     tl_client: TlClient,
+    pm_client: PaymentManagerClient<BigBoyGrpcChannel>,
 }
 
 impl AppContext {
@@ -36,6 +39,9 @@ impl AppContext {
             tl_client: TlClient::new(config.tl_config)
                 .await
                 .context("truelayer connection")?,
+            pm_client: PaymentManagerClient::connect(&config.pm_config.host, config.pm_config.port)
+                .await
+                .context("payment-manager connection")?,
         })
     }
 }
