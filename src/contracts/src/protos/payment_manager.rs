@@ -18,16 +18,30 @@ pub struct CreatePayoutResponse {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CreatePaymentRequest {
-    #[prost(string, tag = "2")]
+    #[prost(string, tag = "1")]
     pub payer_full_name: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub payer_email: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub payee_full_name: ::prost::alloc::string::String,
     #[prost(string, tag = "4")]
+    pub payee_email: ::prost::alloc::string::String,
+    #[prost(uint32, tag = "5")]
+    pub amount: u32,
+    #[prost(string, tag = "6")]
     pub reference: ::prost::alloc::string::String,
+    #[prost(string, tag = "7")]
+    pub security_question: ::prost::alloc::string::String,
+    #[prost(string, tag = "8")]
+    pub security_answer: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CreatePaymentResponse {
     #[prost(string, tag = "1")]
     pub payment_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub resource_token: ::prost::alloc::string::String,
 }
 /// Generated client implementations.
 pub mod payment_manager_client {

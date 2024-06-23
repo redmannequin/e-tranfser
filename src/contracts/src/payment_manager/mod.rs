@@ -18,7 +18,7 @@ pub mod server {
 
 mod protos {
     pub use crate::protos::payment_manager::{
-        payment_manager_client::PaymentManagerClient, CreatePayoutRequest,
+        payment_manager_client::PaymentManagerClient, CreatePaymentRequest, CreatePayoutRequest,
     };
 }
 
@@ -79,4 +79,40 @@ where
             })
         })
     }
+
+    pub async fn create_deposit(
+        &self,
+        payment: Payment,
+    ) -> Result<(PaymentId, String), tonic::Status> {
+        let request = protos::CreatePaymentRequest {
+            payer_full_name: payment.payer_full_name,
+            payer_email: payment.payer_email,
+            payee_full_name: payment.payee_full_name,
+            payee_email: payment.payee_email,
+            amount: payment.amount,
+            reference: payment.reference,
+            security_question: payment.security_question,
+            security_answer: payment.security_answer,
+        };
+
+        let mut grpc_client = self.inner.clone();
+        let res = grpc_client.create_payment(request).await?.into_inner();
+
+        let payment_id = PaymentId::parse_str(&res.payment_id).map_err(|err| {
+            tonic::Status::unknown(format!("Failed to parse Payment ID: {}", err))
+        })?;
+
+        Ok((payment_id, res.resource_token))
+    }
+}
+
+pub struct Payment {
+    pub payer_full_name: String,
+    pub payer_email: String,
+    pub payee_full_name: String,
+    pub payee_email: String,
+    pub amount: u32,
+    pub reference: String,
+    pub security_question: String,
+    pub security_answer: String,
 }

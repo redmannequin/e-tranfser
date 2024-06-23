@@ -13,7 +13,10 @@ pub struct PaymentInfo<'a> {
     pub security_answer: &'a str,
 }
 
-pub async fn create_payment<'a>(app: &AppContext, payment_info: PaymentInfo<'a>) -> PaymentId {
+pub async fn create_payment<'a>(
+    app: &AppContext,
+    payment_info: PaymentInfo<'a>,
+) -> (PaymentId, String) {
     let payment = app
         .tl_client
         .create_ma_payment(
@@ -54,5 +57,5 @@ pub async fn create_payment<'a>(app: &AppContext, payment_info: PaymentInfo<'a>)
         .await
         .unwrap();
 
-    payment_id
+    (payment_id, payment.resource_token)
 }

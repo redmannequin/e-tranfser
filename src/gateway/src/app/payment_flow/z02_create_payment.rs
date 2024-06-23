@@ -3,8 +3,8 @@ use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
 };
-use chrono::Utc;
-use domain::{Payment, PaymentId, PaymentState, PaymentStatuses};
+use contracts::payment_manager::Payment;
+use domain::PaymentState;
 use serde::Deserialize;
 
 use crate::{api::PublicError, log, AppContext};
@@ -33,51 +33,28 @@ pub async fn create_payment(
         .map_err(|_| PublicError::InternalServerError)?
         .to_string();
 
-    let payment = app
-        .tl_client
-        .create_ma_payment(
-            &form.payer_full_name,
-            &form.payer_email,
-            None,
-            form.amount,
-            "test",
-        )
+    let (payment_id, resource_token) = app
+        .pm_client
+        .create_deposit(Payment {
+            payer_full_name: form.payer_full_name,
+            payer_email: form.payer_email,
+            payee_full_name: form.payee_full_name,
+            payee_email: form.payee_email,
+            amount: form.amount,
+            reference: String::from("todo"),
+            security_question: form.security_question,
+            security_answer,
+        })
         .await
         .map_err(|_| PublicError::InternalServerError)?;
 
-    let payment_id = PaymentId::from_uuid(payment.payment_id);
     log::set_payment_id(payment_id);
     log::set_payment_state(PaymentState::InboundCreated);
 
-    app.db_client
-        .upsert_payment(
-            Payment {
-                payment_id,
-                payer_full_name: form.payer_full_name,
-                payer_email: form.payer_email,
-                payee_full_name: form.payee_full_name,
-                payee_email: form.payee_email,
-                amount: form.amount,
-                security_question: form.security_question,
-                security_answer,
-                payment_statuses: PaymentStatuses {
-                    inbound_created_at: Utc::now(),
-                    inbound_authorized_at: None,
-                    inbound_executed_at: None,
-                    inbound_settled_at: None,
-                    inbound_failed_at: None,
-                },
-                payout_data: None,
-                refund_data: None,
-            },
-            0,
-        )
-        .await?;
-
     let auth_link = format!(
         "https://payment.truelayer-sandbox.com/payments#payment_id={}&resource_token={}&return_uri={}", 
-        payment.payment_id,
-        payment.resource_token,
+        payment_id,
+        resource_token,
         app.tl_client.return_uri()
     );
 

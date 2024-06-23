@@ -24,8 +24,17 @@ message CreatePayoutResponse { string payout_id = 1; }
 ////////////////////////////////////////////////////////////////////////////////
 
 message CreatePaymentRequest {
-  string payer_full_name = 2;
-  string reference = 4;
+  string payer_full_name = 1;
+  string payer_email = 2;
+  string payee_full_name = 3;
+  string payee_email = 4;
+  uint32 amount = 5;
+  string reference = 6;
+  string security_question = 7;
+  string security_answer = 8;
 }
 
-message CreatePaymentResponse { string Payment_id = 1; }
+message CreatePaymentResponse {
+  string Payment_id = 1;
+  string resource_token = 2;
+}

@@ -48,19 +48,20 @@ impl PaymentManager for MyPaymentManager {
         let request = request.into_inner();
 
         let payment_info = PaymentInfo {
-            payer_full_name: todo!(),
-            payer_email: todo!(),
-            payee_full_name: todo!(),
-            payee_email: todo!(),
-            amount: todo!(),
-            security_question: todo!(),
-            security_answer: todo!(),
+            payer_full_name: &request.payer_full_name,
+            payer_email: &request.payer_email,
+            payee_full_name: &request.payee_full_name,
+            payee_email: &request.payee_email,
+            amount: request.amount,
+            security_question: &request.security_question,
+            security_answer: &request.security_answer,
         };
 
-        let payment_id = handlers::create_payment(&self.app, payment_info).await;
+        let (payment_id, resource_token) = handlers::create_payment(&self.app, payment_info).await;
 
         Ok(tonic::Response::new(CreatePaymentResponse {
             payment_id: payment_id.to_string(),
+            resource_token,
         }))
     }
 }
