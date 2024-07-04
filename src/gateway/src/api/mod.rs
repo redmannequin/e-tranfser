@@ -1,8 +1,12 @@
-pub mod deposit_payment;
 pub mod tl_webhooks;
 
+use actix_web::web;
 use db::error::DbError;
 use serde::Deserialize;
+
+pub fn api_scope() -> actix_web::Scope {
+    web::scope("api").service(tl_webhooks::tl_webhook)
+}
 
 #[derive(thiserror::Error, Debug)]
 pub enum PublicError {

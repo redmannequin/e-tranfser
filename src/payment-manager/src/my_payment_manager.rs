@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use contracts::payment_manager::server::{
     CreatePaymentRequest, CreatePaymentResponse, CreatePayoutRequest, CreatePayoutResponse,
-    PaymentManager,
+    GetPaymentRequest, GetPaymentResponse, PaymentManager,
 };
 use domain::PaymentId;
 
@@ -63,5 +63,12 @@ impl PaymentManager for MyPaymentManager {
             payment_id: payment_id.to_string(),
             resource_token,
         }))
+    }
+
+    async fn get_payment(
+        &self,
+        request: tonic::Request<GetPaymentRequest>,
+    ) -> std::result::Result<tonic::Response<GetPaymentResponse>, tonic::Status> {
+        todo!()
     }
 }

@@ -61,11 +61,7 @@ pub async fn start(config: AppConfig) -> anyhow::Result<()> {
             .service(web::resource("/").get(redirect_to_app))
             .service(app::app_scope(secret_key.clone()))
             .service(app::admin::admin_scope())
-            .service(
-                web::scope("/api")
-                    .service(api::deposit_payment::deposit_payment)
-                    .service(api::tl_webhooks::tl_webhook),
-            )
+            .service(api::api_scope())
             .default_service(web::to(app::not_found))
     })
     .bind(("0.0.0.0", config.http_port))?

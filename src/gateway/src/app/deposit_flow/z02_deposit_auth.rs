@@ -1,13 +1,11 @@
-use actix_web::{http::header, post, web, HttpResponse, Responder};
+use actix_web::{http::header, web, HttpResponse, Responder};
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use domain::{Payment, PaymentState};
 use serde::Deserialize;
 use tracing::instrument;
 use uuid::Uuid;
 
-use crate::AppContext;
-
-use super::PublicError;
+use crate::{api::PublicError, AppContext};
 
 #[derive(Debug, Deserialize)]
 pub struct FormData {
@@ -15,8 +13,7 @@ pub struct FormData {
     security_answer: String,
 }
 
-#[post("/deposit_payment")]
-pub async fn deposit_payment(
+pub async fn deposit_auth(
     app: web::Data<AppContext>,
     form: web::Form<FormData>,
 ) -> Result<impl Responder, PublicError> {

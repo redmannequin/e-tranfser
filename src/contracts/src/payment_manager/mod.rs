@@ -13,6 +13,7 @@ pub mod server {
     pub use crate::protos::payment_manager::{
         payment_manager_server::{PaymentManager, PaymentManagerServer},
         CreatePaymentRequest, CreatePaymentResponse, CreatePayoutRequest, CreatePayoutResponse,
+        GetPaymentRequest, GetPaymentResponse,
     };
 }
 

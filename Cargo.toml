@@ -5,7 +5,8 @@ members = [
     "src/domain",
     "src/gateway",
     "src/payment-manager",
-    "src/truelayer",
+    "src/clients/plaid",
+    "src/clients/truelayer",
 ]
 resolver = "2"
 
@@ -14,7 +15,8 @@ resolver = "2"
 contracts = { path = "src/contracts" }
 db = { path = "src/db" }
 domain = { path = "src/domain" }
-truelayer = { path = "src/truelayer" }
+plaid = { path = "src/clients/plaid" }
+truelayer = { path = "src/clients/truelayer" }
 
 # External
 actix-session = "0.9"
@@ -44,7 +46,7 @@ prost = "0.12"
 rand = { version = "0.8" }
 reqwest = { version = "0.12", features = ["json"] }
 reqwest-middleware = "0.3"
-reqwest-retry = "0.5"
+reqwest-retry = "0.6"
 reqwest-tracing = "0.5"
 serde = "1"
 serde_json = "1"

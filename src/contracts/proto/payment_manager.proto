@@ -5,6 +5,7 @@ package payment_manager;
 service PaymentManager {
   rpc create_payout(CreatePayoutRequest) returns (CreatePayoutResponse) {}
   rpc create_payment(CreatePaymentRequest) returns (CreatePaymentResponse) {}
+  rpc get_payment(GetPaymentRequest) returns (GetPaymentResponse) {}
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,3 +39,24 @@ message CreatePaymentResponse {
   string Payment_id = 1;
   string resource_token = 2;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+//   GET PAYMENT REQUEST + RESPONSE
+////////////////////////////////////////////////////////////////////////////////
+
+message GetPaymentRequest { string Payment_id = 1; }
+
+message GetPaymentResponse {
+  string Payment_id = 1;
+
+  string payer_full_name = 2;
+  string payer_email = 3;
+  string payee_full_name = 4;
+  string payee_email = 5;
+  uint32 amount = 6;
+  string reference = 7;
+  string security_question = 8;
+  string security_answer = 9;
+}
+
+// enum PaymentStatus {}
