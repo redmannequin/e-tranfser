@@ -51,14 +51,24 @@ impl Payment {
 }
 
 #[derive(Debug, Clone)]
-pub struct PayoutData {
-    pub payout_id: PayoutId,
-    pub payout_statuses: PayoutStatuses,
+pub enum PayoutData {
+    PayoutRegistered {
+        payout_registered_at: DateTime<Utc>,
+    },
+    PayoutCreated {
+        payout_id: PayoutId,
+        payout_statuses: PayoutStatuses,
+    },
 }
 
 impl PayoutData {
     pub fn payout_state(&self) -> PaymentState {
-        self.payout_statuses.payout_state()
+        match self {
+            PayoutData::PayoutRegistered { .. } => PaymentState::PayoutRegistered,
+            PayoutData::PayoutCreated {
+                payout_statuses, ..
+            } => payout_statuses.payout_state(),
+        }
     }
 }
 
@@ -150,6 +160,7 @@ pub enum PaymentState {
     InboundSettled,
     InboundFailed,
     // outbound status
+    PayoutRegistered,
     PayoutCreated,
     PayoutExecuted,
     PayoutFailed,
@@ -167,6 +178,7 @@ impl PaymentState {
             PaymentState::InboundExecuted => "inbound_executed",
             PaymentState::InboundSettled => "inbound_settled",
             PaymentState::InboundFailed => "inbound_failed",
+            PaymentState::PayoutRegistered => "payout_registered",
             PaymentState::PayoutCreated => "payout_created",
             PaymentState::PayoutExecuted => "payout_executed",
             PaymentState::PayoutFailed => "payout_failed",
@@ -288,23 +300,43 @@ impl From<db::entities::Payment> for Payment {
 
 impl PayoutData {
     pub const fn from_entity(value: db::entities::PayoutData) -> Self {
-        PayoutData {
-            payout_id: PayoutId::from_uuid(value.payout_id),
-            payout_statuses: PayoutStatuses {
-                payout_created_at: value.payout_statuses.payout_created_at,
-                payout_executed_at: value.payout_statuses.payout_executed_at,
-                payout_failed_at: value.payout_statuses.payout_failed_at,
+        match value {
+            db::entities::PayoutData::PayoutRegistering {
+                payout_registered_at,
+            } => PayoutData::PayoutRegistered {
+                payout_registered_at,
+            },
+            db::entities::PayoutData::PayoutCreated {
+                payout_id,
+                payout_statuses,
+            } => PayoutData::PayoutCreated {
+                payout_id: PayoutId::from_uuid(payout_id),
+                payout_statuses: PayoutStatuses {
+                    payout_created_at: payout_statuses.payout_created_at,
+                    payout_executed_at: payout_statuses.payout_executed_at,
+                    payout_failed_at: payout_statuses.payout_failed_at,
+                },
             },
         }
     }
 
     pub const fn to_entity(self) -> db::entities::PayoutData {
-        db::entities::PayoutData {
-            payout_id: self.payout_id.into_uuid(),
-            payout_statuses: db::entities::PayoutStatuses {
-                payout_created_at: self.payout_statuses.payout_created_at,
-                payout_executed_at: self.payout_statuses.payout_executed_at,
-                payout_failed_at: self.payout_statuses.payout_failed_at,
+        match self {
+            PayoutData::PayoutRegistered {
+                payout_registered_at,
+            } => db::entities::PayoutData::PayoutRegistering {
+                payout_registered_at,
+            },
+            PayoutData::PayoutCreated {
+                payout_id,
+                payout_statuses,
+            } => db::entities::PayoutData::PayoutCreated {
+                payout_id: payout_id.into_uuid(),
+                payout_statuses: db::entities::PayoutStatuses {
+                    payout_created_at: payout_statuses.payout_created_at,
+                    payout_executed_at: payout_statuses.payout_executed_at,
+                    payout_failed_at: payout_statuses.payout_failed_at,
+                },
             },
         }
     }
@@ -312,14 +344,7 @@ impl PayoutData {
 
 impl From<PayoutData> for db::entities::PayoutData {
     fn from(value: PayoutData) -> Self {
-        db::entities::PayoutData {
-            payout_id: value.payout_id.into_uuid(),
-            payout_statuses: db::entities::PayoutStatuses {
-                payout_created_at: value.payout_statuses.payout_created_at,
-                payout_executed_at: value.payout_statuses.payout_executed_at,
-                payout_failed_at: value.payout_statuses.payout_failed_at,
-            },
-        }
+        value.to_entity()
     }
 }
 
@@ -349,14 +374,7 @@ impl RefundData {
 
 impl From<RefundData> for db::entities::RefundData {
     fn from(value: RefundData) -> Self {
-        db::entities::RefundData {
-            refund_id: value.refund_id.into_uuid(),
-            refund_statuses: db::entities::RefundStatuses {
-                refund_created_at: value.refund_statuses.refund_created_at,
-                refund_executed_at: value.refund_statuses.refund_executed_at,
-                refund_failed_at: value.refund_statuses.refund_failed_at,
-            },
-        }
+        value.to_entity()
     }
 }
 
@@ -500,6 +518,10 @@ macro_rules! impl_uuid_ty {
 
             pub const fn as_uuid(&self) -> &Uuid {
                 &self.0
+            }
+
+            pub fn as_bytes(&self) -> &[u8] {
+                self.0.as_bytes()
             }
         }
 

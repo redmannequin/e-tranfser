@@ -19,6 +19,11 @@ WORKDIR /app
 COPY --from=builder /app/target/release/gateway /app/
 CMD ["./gateway"]
 
+FROM debian:buster-slim as payment-manager
+RUN apt-get update && apt-get install -y ca-certificates libssl1.1 && apt clean && rm -rf /var/lib/apt/lists/*
+WORKDIR /app
+COPY --from=builder /app/target/release/payment-manager /app/
+CMD ["./payment-manager"]
 
 FROM rust:1-slim-buster AS sqlx-migrator
 RUN cargo install sqlx-cli --no-default-features --features rustls,postgres

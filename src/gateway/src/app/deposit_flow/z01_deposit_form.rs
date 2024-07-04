@@ -5,7 +5,10 @@ use serde::Deserialize;
 use uuid::Uuid;
 
 use crate::{
-    app::component::{MyHtml, MyInput},
+    app::{
+        component::{MyHtml, MyInput},
+        deposit_flow::DEPOSIT_AUTH_PAGE,
+    },
     AppContext,
 };
 
@@ -36,7 +39,7 @@ pub async fn deposit_form(
         view! {
             <MyHtml>
                 <div class="container-sm form-signin w-100 m-auto text-center" >
-                    <form action="../api/deposit_payment" method="post" >
+                    <form action={DEPOSIT_AUTH_PAGE} method="post" >
 
                         <h1 class="text-light mb-3 fw-normal">Deposit Payment</h1>
 

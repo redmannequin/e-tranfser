@@ -24,6 +24,20 @@ services:
     networks:
       - e_transfer_dev
 
+  sqlx-migrator:
+    hostname: sqlx-migrator
+    container_name: sqlx-migrator
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: sqlx-migrator
+    depends_on:
+      - postgres
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+    networks:
+      - e_transfer_dev
+
   gateway:
     hostname: gateway
     container_name: gateway
@@ -33,10 +47,58 @@ services:
       target: gateway
     depends_on:
       - postgres
+      - sqlx-migrator
+      - payment-manager
     ports:
       - "3000:3000"
     environment:
       APP_HTTP_PORT: 3000
+
+      APP_OTEL_CONFIG__SERVICE_NAME: gateway
+      APP_OTEL_CONFIG__EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      APP_OTEL_CONFIG__EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS}
+      APP_OTEL_CONFIG__EXPORTER_OTLP_PROTOCOL: grpc
+
+      APP_DB_CONFIG__NAME: ${DB_NAME}
+      APP_DB_CONFIG__HOST: postgres
+      APP_DB_CONFIG__PORT: 5432
+      APP_DB_CONFIG__USERNAME: ${DB_USERNAME}
+      APP_DB_CONFIG__PASSWORD: ${DB_PASSWORD}
+
+      APP_PM_CONFIG__HOST: payment-manager
+      APP_PM_CONFIG__PORT: 50051
+
+      APP_TL_CONFIG__CLIENT_ID: ${TL_CLIENT_ID}
+      APP_TL_CONFIG__CLIENT_SECRET: ${TL_CLIENT_SECRET}
+      APP_TL_CONFIG__MERCHANT_ACCOUNT_ID: ${TL_MERCHANT_ACCOUNT_ID}
+      APP_TL_CONFIG__KID: ${TL_KID}
+      APP_TL_CONFIG__PRIVATE_KEY: ${TL_PRIVATE_KEY}
+      APP_TL_CONFIG__REDIRECT_URI: ${TL_REDIRECT_URI}
+      APP_TL_CONFIG__DATA_REDIRECT_URI: ${TL_DATA_REDIRECT_URI}
+      APP_TL_CONFIG__ENVIORNMENT: ${TL_ENVIORNMENT}
+
+    networks:
+      - e_transfer_dev
+
+  payment-manager:
+    hostname: payment-manager
+    container_name: payment-manager
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: payment-manager
+    depends_on:
+      - postgres
+      - sqlx-migrator
+    ports:
+      - "50051:50051"
+    environment:
+      APP_GRPC_PORT: 50051
+
+      APP_OTEL_CONFIG__SERVICE_NAME: payment-manager
+      APP_OTEL_CONFIG__EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT}
+      APP_OTEL_CONFIG__EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS}
+      APP_OTEL_CONFIG__EXPORTER_OTLP_PROTOCOL: grpc
 
       APP_DB_CONFIG__NAME: ${DB_NAME}
       APP_DB_CONFIG__HOST: postgres

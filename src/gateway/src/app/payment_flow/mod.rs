@@ -24,9 +24,9 @@ pub const PAYMENT_TL_CALLBACK_PAGE: &str = concat!(APP_ROOT, PAYMENT_ROOT, "/tl_
 pub fn payment_scope() -> actix_web::Scope {
     web::scope("payment")
         .service(web::resource("").get(payment_form))
-        .service(web::resource("create_payout").to(create_payment))
+        .service(web::resource("create_payout").post(create_payment))
         .service(web::resource("status").get(payment_status))
         .service(web::resource("status_update").get(payment_status_update))
-        .service(web::resource("tl_callback").to(tl_payment_callback))
+        .service(web::resource("tl_callback").get(tl_payment_callback))
         .service(validation_scope())
 }

@@ -66,6 +66,7 @@ pub async fn payment_status_update(
         PaymentState::InboundExecuted => "Payment Executed...",
         PaymentState::InboundSettled => "Payment Settled Into Landing Account",
         PaymentState::InboundFailed => "Payment Failed",
+        PaymentState::PayoutRegistered => "Payment Deposit Init...",
         PaymentState::PayoutCreated => "Payment Deposit Created...",
         PaymentState::PayoutExecuted => "Payment Deposit Executed",
         PaymentState::PayoutFailed => "Payment Deposit Failed...",

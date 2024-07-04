@@ -5,8 +5,7 @@ use base64::{
     engine::general_purpose::{STANDARD_NO_PAD, URL_SAFE},
     Engine,
 };
-use chrono::Utc;
-use domain::{Payment, PaymentId, PaymentState, PayoutData, PayoutId, PayoutStatuses};
+use domain::{PaymentId, PaymentState};
 use serde::Deserialize;
 
 use crate::{
@@ -43,42 +42,16 @@ pub async fn create_payout(
         todo!()
     }
 
-    let (mut payment, version) = app
-        .db_client
-        .get_payment::<Payment>(payment_id)
-        .await?
-        .ok_or(PublicError::InternalServerError)?;
-
-    if payment.state() >= PaymentState::PayoutCreated {
-        return Err(PublicError::InternalServerError);
-    }
-
-    let payout = app
-        .tl_client
-        .create_payout(
-            &payment.payee_full_name,
-            iban.as_str(),
-            payment.amount,
-            "ref",
-        )
+    let payout_id = app
+        .pm_client
+        .create_payout(payment_id, iban, String::from("ref"))
         .await
-        .map_err(|_| PublicError::InternalServerError)?;
+        .unwrap();
 
-    let payout_id = PayoutId::from_uuid(payout.payout_id);
     log::set_payout_id(payout_id);
     log::set_payment_state(PaymentState::PayoutCreated);
 
-    payment.payout_data = Some(PayoutData {
-        payout_id,
-        payout_statuses: PayoutStatuses {
-            payout_created_at: Utc::now(),
-            payout_executed_at: None,
-            payout_failed_at: None,
-        },
-    });
-
-    let link = format!("{}?payment_id={}", DESPOSIT_STATUS_PAGE, payment.payment_id);
-    app.db_client.upsert_payment(payment, version + 1).await?;
+    let link = format!("{}?payment_id={}", DESPOSIT_STATUS_PAGE, payment_id);
 
     Ok(HttpResponse::SeeOther()
         .insert_header((header::LOCATION, link))

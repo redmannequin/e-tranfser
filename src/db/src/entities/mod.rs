@@ -42,9 +42,14 @@ pub enum PaymentData {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PayoutData {
-    pub payout_id: Uuid,
-    pub payout_statuses: PayoutStatuses,
+pub enum PayoutData {
+    PayoutRegistering {
+        payout_registered_at: DateTime<Utc>,
+    },
+    PayoutCreated {
+        payout_id: Uuid,
+        payout_statuses: PayoutStatuses,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

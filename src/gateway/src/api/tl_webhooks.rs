@@ -1,7 +1,7 @@
 use actix_web::{post, web, HttpRequest, HttpResponse, Responder};
 use anyhow::{ensure, Context};
 use chrono::{DateTime, Utc};
-use domain::{Payment, PaymentId, PaymentState, PayoutId, RefundId};
+use domain::{Payment, PaymentId, PaymentState, PayoutData, PayoutId, RefundId};
 use serde::Deserialize;
 use tracing::warn;
 use truelayer_signing::Method;
@@ -206,8 +206,11 @@ pub async fn tl_webhook(
             log::set_payment_id(payment.payment_id);
 
             match payment.payout_data.as_mut() {
-                Some(payout) => payout.payout_statuses.payout_executed_at = Some(executed_at),
-                None => todo!(),
+                Some(PayoutData::PayoutCreated {
+                    ref mut payout_statuses,
+                    ..
+                }) => payout_statuses.payout_executed_at = Some(executed_at),
+                _ => todo!(),
             }
 
             app.db_client.upsert_payment(payment, version + 1).await?;
@@ -229,8 +232,11 @@ pub async fn tl_webhook(
             log::set_payment_id(payment.payment_id);
 
             match payment.payout_data.as_mut() {
-                Some(payout) => payout.payout_statuses.payout_failed_at = Some(failed_at),
-                None => todo!(),
+                Some(PayoutData::PayoutCreated {
+                    ref mut payout_statuses,
+                    ..
+                }) => payout_statuses.payout_failed_at = Some(failed_at),
+                _ => todo!(),
             }
 
             app.db_client.upsert_payment(payment, version + 1).await?;
